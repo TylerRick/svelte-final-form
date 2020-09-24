@@ -1788,7 +1788,7 @@
     	});
 
     	onDestroy(() => {
-    		unsubscribe();
+    		unsubscribe && unsubscribe();
     	});
 
     	function getFormSubscriptionItems() {
@@ -1936,7 +1936,7 @@
     	});
 
     	onDestroy(() => {
-    		unsubscribe();
+    		unsubscribe && unsubscribe();
     	});
 
     	function getFieldSubscriptionItems() {

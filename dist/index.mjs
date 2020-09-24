@@ -1782,7 +1782,7 @@ function instance($$self, $$props, $$invalidate) {
 	});
 
 	onDestroy(() => {
-		unsubscribe();
+		unsubscribe && unsubscribe();
 	});
 
 	function getFormSubscriptionItems() {
@@ -1930,7 +1930,7 @@ function instance$1($$self, $$props, $$invalidate) {
 	});
 
 	onDestroy(() => {
-		unsubscribe();
+		unsubscribe && unsubscribe();
 	});
 
 	function getFieldSubscriptionItems() {
