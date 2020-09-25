@@ -1,5 +1,6 @@
 <script>
-  import createForm from "./createForm"
+  import { getForm } from "./context"
+  import useFormState from "./useFormState"
   import whenValueChanges from "./whenValueChanges"
   import shallowEqual from "./shallowEqual"
 
@@ -8,7 +9,8 @@
   export let initialValuesEqual = shallowEqual
   export let keepDirtyOnReinitialize = undefined
 
-  const [form, state] = createForm({
+  const form = getForm()
+  const state = useFormState({
     subscription,
     initialValues,
     keepDirtyOnReinitialize,
