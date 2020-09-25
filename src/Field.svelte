@@ -1,62 +1,25 @@
 <script>
-  import { getContext, onDestroy, onMount } from "svelte";
-  import { fieldSubscriptionItems } from "final-form";
-  import { FORM } from "./Form.svelte";
+  // console.log('Field')
+  import useField from './useField'
 
-  const defaultParse = (value) => (value === "" ? undefined : value);
+  export let name
+  export let subscription = undefined
+  export let validate = undefined
 
-  export let name,
-    subscription = getFieldSubscriptionItems(),
-    validate = undefined,
-    parse = defaultParse;
-
-  let meta = {};
-  let input = {};
-  let unsubscribe;
-
-  const form = getContext(FORM);
-
-  if (process.env.NODE_ENV !== "production" && !form) {
-    throw new Error(
-      "Could not find svelte-final-form context value. Please ensure that your Field is inside the Form component.",
-    );
-  }
-
-  onMount(() => {
-    unsubscribe = form.registerField(
-      name,
-      (fieldState) => {
-        const { blur, change, focus, value, ...fieldMeta } = fieldState;
-
-        meta = fieldMeta;
-
-        input = {
-          name,
-          onBlur: blur,
-          onChange: (val) => {
-            change(parse(val, name));
-          },
-          onFocus: focus,
-          value: value === undefined ? "" : value,
-        };
-      },
+  const field = useField(
+    name,
+    {
       subscription,
-      {
-        getValidator: () => validate,
-      },
-    );
-  });
+      validate,
+      ...$$restProps,
+    }
+  )
 
-  onDestroy(() => {
-    unsubscribe && unsubscribe();
-  });
-
-  function getFieldSubscriptionItems() {
-    return fieldSubscriptionItems.reduce((result, key) => {
-      result[key] = true;
-      return result;
-    }, {});
-  }
+  let input, meta
+  $: ({
+    input,
+    meta,
+  } = $field)
 </script>
 
-<slot {meta} {input} />
+<slot {input} {meta} />
