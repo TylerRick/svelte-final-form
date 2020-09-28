@@ -10,10 +10,10 @@
 
   export let name
   export let subscription = undefined
-  export let defaultValue
-  export let initialValue
+  export let defaultValue = undefined
+  export let initialValue = undefined
   export let isEqual = undefined
-  export let validate
+  export let validate = undefined
 
   const fieldsStore = useFieldArray(
     name,

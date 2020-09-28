@@ -11,11 +11,11 @@ const getSelectedValues = options => {
   return result
 }
 
-const getValue = ({
+const getValue = (
   event,
   currentValue,
   valueProp,
-}) => {
+) => {
   const { target: { type, value, checked } } = event
   switch (type) {
     case 'checkbox':

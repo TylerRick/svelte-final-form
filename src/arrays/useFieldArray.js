@@ -1,6 +1,5 @@
 /* eslint-disable no-shadow */
-import useForm from '../useForm'
-import useField from '../useField'
+import { getForm, useField } from '..'
 import { fieldSubscriptionItems, ARRAY_ERROR } from 'final-form'
 import defaultIsEqual from './defaultIsEqual'
 import { derived } from 'svelte/store';
@@ -15,6 +14,11 @@ const all = fieldSubscriptionItems.reduce((result, key) => {
   return result
 }, {})
 
+/**
+ * @param {*} name 
+ * @param {*} config 
+ * @returns a store whose value contains {fields, meta}; It also provides separate derived fields, meta stores if you want to destructure directly as {fields, meta} = useFieldArray
+ */
 const useFieldArray = (
   name,
   config = {},
@@ -27,7 +31,7 @@ const useFieldArray = (
     validate: validateProp
   } = config
 
-  const form = useForm()
+  const form = getForm()
 
   const formMutators = form.mutators
   const hasMutators = !!(formMutators && formMutators.push && formMutators.pop)
@@ -71,7 +75,7 @@ const useFieldArray = (
     }
   )
 
-  const fieldsStore = derived(
+  const store = derived(
     field,
     $field => {
       const {
@@ -126,14 +130,18 @@ const useFieldArray = (
         names: () => map((name, _i) => name),
       }
 
-      console.log(`FieldArray fieldState for ${name}:`, fields.names())
+      // console.log(`FieldArray fieldState for ${name}:`, fields.names())
       return {
         fields,
         meta,
       }
     }
   )
-  return fieldsStore
+
+  store.fields = derived(store, $store => $store.fields)
+  store.meta = derived(store, $store => $store.meta)
+  // TODO: Return [fields, meta] to be consistent with useForm ?
+  return store
 }
 
 export default useFieldArray

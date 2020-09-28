@@ -1,35 +1,33 @@
 <script>
-  import { onDestroy, onMount } from "svelte"
-  import { formSubscriptionItems } from "final-form"
-
-  import createForm from "./createForm"
+  import useForm from "./useForm"
   import whenValueChanges from "./whenValueChanges"
   import shallowEqual from "./shallowEqual"
 
   export let subscription = undefined
-  export let initialValues
-  export let initialValuesEqual
+  export let initialValues = undefined
+  export let initialValuesEqual = shallowEqual
+  export let keepDirtyOnReinitialize = undefined
 
-  let state = {}
+  const [form, state] = useForm({
+    subscription,
+    initialValues,
+    keepDirtyOnReinitialize,
+    ...$$restProps
+  })
 
-  const form = createForm(
-    {
-      subscription,
-      initialValues,
-      ...$$restProps
-    },
-    (newState) => {
-      state = newState
-    }
-  )
-
+  // TODO: Add more whenValueChanges calls for all config options like in react-final-form/src/ReactFinalForm.js
   const whenInitialValuesChanges = whenValueChanges(
     initialValues,
     () => form.setConfig("initialValues", initialValues),
-    initialValuesEqual || shallowEqual,
+    initialValuesEqual,
   )
-
   $: whenInitialValuesChanges(initialValues)
+
+  const whenKeepDirtyOnReinitializeChanges = whenValueChanges(
+    keepDirtyOnReinitialize,
+    () => form.setConfig("keepDirtyOnReinitialize", keepDirtyOnReinitialize),
+  )
+  $: whenKeepDirtyOnReinitializeChanges(keepDirtyOnReinitialize)
 </script>
 
-<slot {form} {state} />
+<slot {form} state={$state} />

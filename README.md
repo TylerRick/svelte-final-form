@@ -24,7 +24,7 @@ or
 yarn add final-form svelte-final-form
 ```
 
-### Architecture
+## Architecture
 
 Svelte Final Form is a thin Svelte wrapper for Final Form, which is a subscriptions-based form state management library that uses the Observer pattern.
 
@@ -66,7 +66,7 @@ By default, Svelte Final Form subscribes to all changes, but if you want to fine
 
 <Form {onSubmit} {validate} {initialValues} let:form let:state>
   <form on:submit|preventDefault={form.submit}>
-    <Field name="firstName" let:input let:meta>
+    <Field name="firstName" let:field>
       <label for="firstName">First Name</label>
       <input
         name={input.name}
@@ -82,12 +82,12 @@ By default, Svelte Final Form subscribes to all changes, but if you want to fine
     </Field>
 
     <!-- You can prepare you Form Group Adapter with Label, Input, Errors -->
-    <Field name="lastName" let:input let:meta>
+    <Field name="lastName" let:field>
       <FormGroup label="Last Name" type="text" {...input} {...meta} />
     </Field>
 
     <!-- Example for svelte-select -->
-    <Field name="color" let:input let:meta>
+    <Field name="color" let:field>
       <Select
         items={selectItems}
         on:blur={input.onBlur}
@@ -100,12 +100,25 @@ By default, Svelte Final Form subscribes to all changes, but if you want to fine
 
     <button type="submit" disabled={state.submitting}>Submit</button>
     or
-    <button disabled={state.pristine} on:click={() => form.reset(initialValues)}>Reset</button>
+    <button type="button" disabled={state.pristine} on:click={() => form.reset()}>Reset</button>
   </form>
 </Form>
 ```
 
-### TODO
+## More examples
+
+- ...
+
+### To run examples locally
+
+```
+cd example
+npm install
+npm run dev
+```
+
+
+## TODO
 
 - [ ] Write tests
 - [ ] Final Form Arrays

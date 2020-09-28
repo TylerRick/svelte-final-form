@@ -7,103 +7,27 @@
   const key = {};
 
   // Simple setter/getter
-  const setFormContext = context => {
+
+  const setForm = context => {
     svelte.setContext(key, context);
   };
-  const getFormContext = () => {
-    return svelte.getContext(key)
-  };
 
-  // This simply wraps the upstream (final-form) createForm and provides the created form via context
+  // Just a simple wrapper for getContext(key), in order to provide a single, easy [entrypoint] for any component/consumer needing to get this context value
+  // TODO: ... in order to provide an API matching react-final-form
+  // for those migrating from it.
+  // react-final-form is inconsistent:
+  // - useForm (which simply gets) is very unlike useField (which subscribes); therefore we rename it to getForm in this library to be internally consistent
+  // - Field is simply a trivial wrapper for useField
+  // - but Form is not simply a wrapper for useForm!!! in this library, it is!
+  // Also: useWhatever seems to be a svelte convention for returning a "whatever" store that you can subscribe to
+  const getForm = () => {
+    const form = svelte.getContext(key);
 
-  function createFormContext({
-    initialValues,
-    ...restProps
-  }) {
-    const form = finalForm.createForm({ initialValues, ...restProps });
-
-    setFormContext(form);
-
-    return form
-  }
-
-  function whenValueChanges(init, callback, isEqual = (a, b) => a === b) {
-    let prev = init;
-    return (value) => {
-      if (!isEqual(prev, value)) {
-        callback();
-        prev = value;
-      }
-    };
-  }
-
-  const shallowEqual = (a, b) => {
-    if (a === b) {
-      return true;
-    }
-    if (typeof a !== "object" || !a || typeof b !== "object" || !b) {
-      return false;
-    }
-    var keysA = Object.keys(a);
-    var keysB = Object.keys(b);
-    if (keysA.length !== keysB.length) {
-      return false;
-    }
-    var bHasOwnProperty = Object.prototype.hasOwnProperty.bind(b);
-    for (var idx = 0; idx < keysA.length; idx++) {
-      var key = keysA[idx];
-      if (!bHasOwnProperty(key) || a[key] !== b[key]) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  // This is the equivalent of useForm from react-final-form.
-
-  // TODO rename to just all like useField
-  const allSubscription = () => {
-    return finalForm.formSubscriptionItems.reduce((result, key) => {
-      result[key] = true;
-      return result
-    }, {})
-  };
-
-  function useForm({
-    subscription = allSubscription(),
-    initialValues,
-    ...restProps
-  }, onUpdateState) {
-
-    let state = {};
-    let unsubscribe;
-
-    const form = finalForm.createForm({
-      initialValues,
-      ...restProps
-    });
-
-    setFormContext(form);
-
-    svelte.onMount(() => {
-      unsubscribe = form.subscribe(onUpdateState, subscription);
-    });
-
-    svelte.onDestroy(() => {
-      unsubscribe && unsubscribe();
-    });
-
-    return [form, state]
-  }
-
-  // Just a simple wrapper for getFormContext, in order to provide an API matching react-final-form
-
-  const useForm$1 = () => {
-    const form = getFormContext();
-
-    if (process.env.NODE_ENV !== "production" && !form) {
+    // process is not defined in browser environment
+    // process.env.NODE_ENV !== "production" &&
+    if (!form) {
       throw new Error(
-        "Could not find svelte-final-form context value. Please ensure that your Field is inside the Form component.",
+        "Could not find svelte-final-form context value. Please ensure that your Field is inside the Form component (or that you have used useForm directly).",
       )
     }
 
@@ -234,9 +158,107 @@
       });
   }
 
-  // import { addLazyFieldMetaState } from './getters'
+  // Creates *and subscribes to!!* a final-form form.
 
-  const all = finalForm.fieldSubscriptionItems.reduce((result, key) => {
+  const all = finalForm.formSubscriptionItems.reduce((result, key) => {
+    result[key] = true;
+    return result
+  }, {});
+
+  /**
+   * One important difference from <Form> is that <Form> auto-subscribes to the state store so you don't have to use $state within <Form let:state>.
+   * TODO: But maybe we should change it to simply pass through the state store as-is and use $state to be consistent. This would also make it clear that you are _subscribing_ to it.
+   * @param {*} param0 
+   * @returns [form, state]. state is a store.
+   */
+  const useForm = ({
+    subscription = all,
+    initialValues,
+    ...restProps
+  }) => {
+    // Docs: https://final-form.org/docs/final-form/api#createform
+    // Docs: https://final-form.org/docs/final-form/types/Config
+    const form = finalForm.createForm({
+      initialValues,
+      ...restProps
+    });
+
+    const state = readable({}, set => {
+      let unsubscribe;
+
+      const subscriber = (formState) => {
+        // Docs: https://final-form.org/docs/final-form/types/FormState
+        set(formState);
+      };
+
+      // Docs: https://final-form.org/docs/final-form/types/FormApi#subscribe
+      unsubscribe = form.subscribe(subscriber, subscription);
+
+      return () => {
+        unsubscribe();
+      }
+    });
+
+    setForm(form);
+    return [form, state]
+  };
+
+  const getSelectedValues = options => {
+    const result = [];
+    if (options) {
+      for (let index = 0; index < options.length; index++) {
+        const option = options[index];
+        if (option.selected) {
+          result.push(option.value);
+        }
+      }
+    }
+    return result
+  };
+
+  const getValue = (
+    event,
+    currentValue,
+    valueProp,
+  ) => {
+    const { target: { type, value, checked } } = event;
+    switch (type) {
+      case 'checkbox':
+        if (valueProp !== undefined) {
+          // we are maintaining an array, not just a boolean
+          if (checked) {
+            // add value to current array value
+            return Array.isArray(currentValue)
+              ? currentValue.concat(valueProp)
+              : [valueProp]
+          } else {
+            // remove value from current array value
+            if (!Array.isArray(currentValue)) {
+              return currentValue
+            }
+            const index = currentValue.indexOf(valueProp);
+            if (index < 0) {
+              return currentValue
+            } else {
+              return currentValue
+                .slice(0, index)
+                .concat(currentValue.slice(index + 1))
+            }
+          }
+        } else {
+          // it's just a boolean
+          return !!checked
+        }
+      case 'select-multiple':
+        return getSelectedValues(event.target.options)
+      default:
+        return value
+    }
+  };
+
+  // TODO: import { addLazyFieldMetaState } from './getters'
+
+  const all$1 = finalForm.fieldSubscriptionItems.reduce((result, key) => {
     result[key] = true;
     return result
   }, {});
@@ -246,32 +268,45 @@
 
   // const defaultIsEqual = (a, b) => a === b
 
+  /**
+   * Caveat: you can't change config after you've subscribed to the field using useField.
+   * If you need a dynamic validate behavior, you have to extract the dynamicness out to a function, and statically pass that same function as the initial and immutable value of validate.
+   * Example:
+   *   $: maybeRequired = (value) => isRequired && required(value)
+   * TODO: does react-final-form's field-level validate have the same limitation? seems like it would because registerField only called once with the initial value for validate.
+   * TODO: demonstrate in example
+   * @param {*} name 
+   * @param {*} config 
+   */
   const useField = (
     name,
     config = {},
   ) => {
     // Docs: https://final-form.org/docs/react-final-form/types/FieldProps
     const {
-      afterSubmit,
-      allowNull,
-      component,
-      data,
-      defaultValue,
+      // TODO: use all these options that react-final-form has:
+      // afterSubmit,
+      // allowNull,
+      // component,
+      // data,
+      // defaultValue,
       format = defaultFormat,
-      formatOnBlur,
-      initialValue,
+      // formatOnBlur,
+      // initialValue,
       multiple,
       parse = defaultParse,
-      subscription = all,
+      subscription = all$1,
       type,
-      validateFields,
+      // validateFields,
       value: _value,
 
       validate,
     } = config;
 
-    const form = useForm$1();
-    if (process.env.NODE_ENV !== "production" && !form) {
+    const form = getForm();
+    // process is not defined in browser environment
+    // process.env.NODE_ENV !== "production" &&
+    if (!form) {
       throw new Error(
         "Could not find svelte-final-form context value. Please ensure that your Field is inside the Form component.",
       )
@@ -295,15 +330,29 @@
 
         const input = {
           name,
+          value: format(value),
+        };
+        if (multiple) {
+          input.multiple = multiple;
+        }
+        if (type !== undefined) {
+          input.type = type;
+        }
+
+        const handlers = {
           onBlur: blur,
-          onChange: (val) => {
-            change(parse(val, name));
+          onChange: (event) => {
+            // eslint-disable-next-line no-shadow
+            const value = event && event.target
+              ? getValue(event, fieldState.value, _value)
+              : event;
+            change(parse(value, name));
           },
           onFocus: focus,
-          value: format(value),
         };
         set({
           input,
+          handlers,
           meta,
         });
       };
@@ -316,7 +365,10 @@
         subscription,
         // Docs: https://final-form.org/docs/final-form/types/FieldConfig
         {
-          getValidator: () => validate,
+          getValidator: () => {
+            // console.log(`getValidator for ${name}:`, validate)
+            return validate
+          },
         },
       );
 
@@ -325,21 +377,58 @@
       }
     });
 
+
+    store.input = derived(store, $store => $store.input);
+    store.handlers = derived(store, $store => $store.handlers);
+    store.meta = derived(store, $store => $store.meta);
+    // TODO: Return [input, meta] to be consistent with how useForm returns [form, state] ? But that's a bit different since form is not a store; only state is a store. So already we have it consistent in that they both return only a single store.
     return store
   };
 
+  function whenValueChanges(init, callback, isEqual = (a, b) => a === b) {
+    let prev = init;
+    return (value) => {
+      if (!isEqual(prev, value)) {
+        callback();
+        prev = value;
+      }
+    };
+  }
+
+  const shallowEqual = (a, b) => {
+    if (a === b) {
+      return true;
+    }
+    if (typeof a !== "object" || !a || typeof b !== "object" || !b) {
+      return false;
+    }
+    var keysA = Object.keys(a);
+    var keysB = Object.keys(b);
+    if (keysA.length !== keysB.length) {
+      return false;
+    }
+    var bHasOwnProperty = Object.prototype.hasOwnProperty.bind(b);
+    for (var idx = 0; idx < keysA.length; idx++) {
+      var key = keysA[idx];
+      if (!bHasOwnProperty(key) || a[key] !== b[key]) {
+        return false;
+      }
+    }
+    return true;
+  };
+
   /* src/Form.svelte generated by Svelte v3.29.0 */
-  const get_default_slot_changes = dirty => ({ state: dirty & /*state*/ 1 });
+  const get_default_slot_changes = dirty => ({ state: dirty & /*$state*/ 1 });
 
   const get_default_slot_context = ctx => ({
   	form: /*form*/ ctx[1],
-  	state: /*state*/ ctx[0]
+  	state: /*$state*/ ctx[0]
   });
 
   function create_fragment(ctx) {
   	let current;
-  	const default_slot_template = /*#slots*/ ctx[6].default;
-  	const default_slot = internal.create_slot(default_slot_template, ctx, /*$$scope*/ ctx[5], get_default_slot_context);
+  	const default_slot_template = /*#slots*/ ctx[8].default;
+  	const default_slot = internal.create_slot(default_slot_template, ctx, /*$$scope*/ ctx[7], get_default_slot_context);
 
   	return {
   		c() {
@@ -354,8 +443,8 @@
   		},
   		p(ctx, [dirty]) {
   			if (default_slot) {
-  				if (default_slot.p && dirty & /*$$scope, state*/ 33) {
-  					internal.update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[5], dirty, get_default_slot_changes, get_default_slot_context);
+  				if (default_slot.p && dirty & /*$$scope, $state*/ 129) {
+  					internal.update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[7], dirty, get_default_slot_changes, get_default_slot_context);
   				}
   			}
   		},
@@ -375,43 +464,60 @@
   }
 
   function instance($$self, $$props, $$invalidate) {
-  	const omit_props_names = ["subscription","initialValues","initialValuesEqual"];
+  	const omit_props_names = ["subscription","initialValues","initialValuesEqual","keepDirtyOnReinitialize"];
   	let $$restProps = internal.compute_rest_props($$props, omit_props_names);
+  	let $state;
   	let { $$slots: slots = {}, $$scope } = $$props;
   	let { subscription = undefined } = $$props;
-  	let { initialValues } = $$props;
-  	let { initialValuesEqual } = $$props;
-  	let state = {};
+  	let { initialValues = undefined } = $$props;
+  	let { initialValuesEqual = shallowEqual } = $$props;
+  	let { keepDirtyOnReinitialize = undefined } = $$props;
 
-  	const form = useForm(
-  		{
-  			subscription,
-  			initialValues,
-  			...$$restProps
-  		},
-  		newState => {
-  			$$invalidate(0, state = newState);
-  		}
-  	);
+  	const [form, state] = useForm({
+  		subscription,
+  		initialValues,
+  		keepDirtyOnReinitialize,
+  		...$$restProps
+  	});
 
-  	const whenInitialValuesChanges = whenValueChanges(initialValues, () => form.setConfig("initialValues", initialValues), initialValuesEqual || shallowEqual);
+  	internal.component_subscribe($$self, state, value => $$invalidate(0, $state = value));
+
+  	// TODO: Add more whenValueChanges calls for all config options like in react-final-form/src/ReactFinalForm.js
+  	const whenInitialValuesChanges = whenValueChanges(initialValues, () => form.setConfig("initialValues", initialValues), initialValuesEqual);
+
+  	const whenKeepDirtyOnReinitializeChanges = whenValueChanges(keepDirtyOnReinitialize, () => form.setConfig("keepDirtyOnReinitialize", keepDirtyOnReinitialize));
 
   	$$self.$$set = $$new_props => {
   		$$props = internal.assign(internal.assign({}, $$props), internal.exclude_internal_props($$new_props));
-  		$$invalidate(8, $$restProps = internal.compute_rest_props($$props, omit_props_names));
-  		if ("subscription" in $$new_props) $$invalidate(2, subscription = $$new_props.subscription);
-  		if ("initialValues" in $$new_props) $$invalidate(3, initialValues = $$new_props.initialValues);
-  		if ("initialValuesEqual" in $$new_props) $$invalidate(4, initialValuesEqual = $$new_props.initialValuesEqual);
-  		if ("$$scope" in $$new_props) $$invalidate(5, $$scope = $$new_props.$$scope);
+  		$$invalidate(11, $$restProps = internal.compute_rest_props($$props, omit_props_names));
+  		if ("subscription" in $$new_props) $$invalidate(3, subscription = $$new_props.subscription);
+  		if ("initialValues" in $$new_props) $$invalidate(4, initialValues = $$new_props.initialValues);
+  		if ("initialValuesEqual" in $$new_props) $$invalidate(5, initialValuesEqual = $$new_props.initialValuesEqual);
+  		if ("keepDirtyOnReinitialize" in $$new_props) $$invalidate(6, keepDirtyOnReinitialize = $$new_props.keepDirtyOnReinitialize);
+  		if ("$$scope" in $$new_props) $$invalidate(7, $$scope = $$new_props.$$scope);
   	};
 
   	$$self.$$.update = () => {
-  		if ($$self.$$.dirty & /*initialValues*/ 8) {
+  		if ($$self.$$.dirty & /*initialValues*/ 16) {
   			 whenInitialValuesChanges(initialValues);
+  		}
+
+  		if ($$self.$$.dirty & /*keepDirtyOnReinitialize*/ 64) {
+  			 whenKeepDirtyOnReinitializeChanges(keepDirtyOnReinitialize);
   		}
   	};
 
-  	return [state, form, subscription, initialValues, initialValuesEqual, $$scope, slots];
+  	return [
+  		$state,
+  		form,
+  		state,
+  		subscription,
+  		initialValues,
+  		initialValuesEqual,
+  		keepDirtyOnReinitialize,
+  		$$scope,
+  		slots
+  	];
   }
 
   class Form extends internal.SvelteComponent {
@@ -419,29 +525,29 @@
   		super();
 
   		internal.init(this, options, instance, create_fragment, internal.safe_not_equal, {
-  			subscription: 2,
-  			initialValues: 3,
-  			initialValuesEqual: 4
+  			subscription: 3,
+  			initialValues: 4,
+  			initialValuesEqual: 5,
+  			keepDirtyOnReinitialize: 6
   		});
   	}
   }
 
   /* src/Field.svelte generated by Svelte v3.29.0 */
+  const get_default_slot_changes_2 = dirty => ({ field: dirty & /*field*/ 4 });
+  const get_default_slot_context_2 = ctx => ({ field: /*field*/ ctx[2] });
+  const get_default_slot_changes_1 = dirty => ({ field: dirty & /*field*/ 4 });
+  const get_default_slot_context_1 = ctx => ({ field: /*field*/ ctx[2] });
+  const get_component_slot_changes = dirty => ({ field: dirty & /*field*/ 4 });
+  const get_component_slot_context = ctx => ({ field: /*field*/ ctx[2] });
+  const get_default_slot_changes$1 = dirty => ({ field: dirty & /*field*/ 4 });
+  const get_default_slot_context$1 = ctx => ({ field: /*field*/ ctx[2] });
 
-  const get_default_slot_changes$1 = dirty => ({
-  	input: dirty & /*input*/ 1,
-  	meta: dirty & /*meta*/ 2
-  });
-
-  const get_default_slot_context$1 = ctx => ({
-  	input: /*input*/ ctx[0],
-  	meta: /*meta*/ ctx[1]
-  });
-
-  function create_fragment$1(ctx) {
+  // (52:0) {:else}
+  function create_else_block(ctx) {
   	let current;
-  	const default_slot_template = /*#slots*/ ctx[7].default;
-  	const default_slot = internal.create_slot(default_slot_template, ctx, /*$$scope*/ ctx[6], get_default_slot_context$1);
+  	const default_slot_template = /*#slots*/ ctx[9].default;
+  	const default_slot = internal.create_slot(default_slot_template, ctx, /*$$scope*/ ctx[12], get_default_slot_context_2);
 
   	return {
   		c() {
@@ -454,10 +560,10 @@
 
   			current = true;
   		},
-  		p(ctx, [dirty]) {
+  		p(ctx, dirty) {
   			if (default_slot) {
-  				if (default_slot.p && dirty & /*$$scope, input, meta*/ 67) {
-  					internal.update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[6], dirty, get_default_slot_changes$1, get_default_slot_context$1);
+  				if (default_slot.p && dirty & /*$$scope, field*/ 4100) {
+  					internal.update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[12], dirty, get_default_slot_changes_2, get_default_slot_context_2);
   				}
   			}
   		},
@@ -476,42 +582,799 @@
   	};
   }
 
+  // (38:33) 
+  function create_if_block_1(ctx) {
+  	let current;
+  	const component_slot_template = /*#slots*/ ctx[9].component;
+  	const component_slot = internal.create_slot(component_slot_template, ctx, /*$$scope*/ ctx[12], get_component_slot_context);
+  	const component_slot_or_fallback = component_slot || fallback_block_1(ctx);
+
+  	return {
+  		c() {
+  			if (component_slot_or_fallback) component_slot_or_fallback.c();
+  		},
+  		m(target, anchor) {
+  			if (component_slot_or_fallback) {
+  				component_slot_or_fallback.m(target, anchor);
+  			}
+
+  			current = true;
+  		},
+  		p(ctx, dirty) {
+  			if (component_slot) {
+  				if (component_slot.p && dirty & /*$$scope, field*/ 4100) {
+  					internal.update_slot(component_slot, component_slot_template, ctx, /*$$scope*/ ctx[12], dirty, get_component_slot_changes, get_component_slot_context);
+  				}
+  			} else {
+  				if (component_slot_or_fallback && component_slot_or_fallback.p && dirty & /*component, field, $$restProps, value, $$scope*/ 4135) {
+  					component_slot_or_fallback.p(ctx, dirty);
+  				}
+  			}
+  		},
+  		i(local) {
+  			if (current) return;
+  			internal.transition_in(component_slot_or_fallback, local);
+  			current = true;
+  		},
+  		o(local) {
+  			internal.transition_out(component_slot_or_fallback, local);
+  			current = false;
+  		},
+  		d(detaching) {
+  			if (component_slot_or_fallback) component_slot_or_fallback.d(detaching);
+  		}
+  	};
+  }
+
+  // (26:0) {#if component === 'input' || component === 'textarea'}
+  function create_if_block(ctx) {
+  	let current;
+  	const default_slot_template = /*#slots*/ ctx[9].default;
+  	const default_slot = internal.create_slot(default_slot_template, ctx, /*$$scope*/ ctx[12], get_default_slot_context$1);
+  	const default_slot_or_fallback = default_slot || fallback_block(ctx);
+
+  	return {
+  		c() {
+  			if (default_slot_or_fallback) default_slot_or_fallback.c();
+  		},
+  		m(target, anchor) {
+  			if (default_slot_or_fallback) {
+  				default_slot_or_fallback.m(target, anchor);
+  			}
+
+  			current = true;
+  		},
+  		p(ctx, dirty) {
+  			if (default_slot) {
+  				if (default_slot.p && dirty & /*$$scope, field*/ 4100) {
+  					internal.update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[12], dirty, get_default_slot_changes$1, get_default_slot_context$1);
+  				}
+  			} else {
+  				if (default_slot_or_fallback && default_slot_or_fallback.p && dirty & /*component, field, $$restProps, value*/ 39) {
+  					default_slot_or_fallback.p(ctx, dirty);
+  				}
+  			}
+  		},
+  		i(local) {
+  			if (current) return;
+  			internal.transition_in(default_slot_or_fallback, local);
+  			current = true;
+  		},
+  		o(local) {
+  			internal.transition_out(default_slot_or_fallback, local);
+  			current = false;
+  		},
+  		d(detaching) {
+  			if (default_slot_or_fallback) default_slot_or_fallback.d(detaching);
+  		}
+  	};
+  }
+
+  // (40:4) <Input       {component}       {field}       {...$$restProps}       on:input={(e) => {         forwardEvent(e)         value = e.detail.target.value       } }     >
+  function create_default_slot(ctx) {
+  	let current;
+  	const default_slot_template = /*#slots*/ ctx[9].default;
+  	const default_slot = internal.create_slot(default_slot_template, ctx, /*$$scope*/ ctx[12], get_default_slot_context_1);
+
+  	return {
+  		c() {
+  			if (default_slot) default_slot.c();
+  		},
+  		m(target, anchor) {
+  			if (default_slot) {
+  				default_slot.m(target, anchor);
+  			}
+
+  			current = true;
+  		},
+  		p(ctx, dirty) {
+  			if (default_slot) {
+  				if (default_slot.p && dirty & /*$$scope, field*/ 4100) {
+  					internal.update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[12], dirty, get_default_slot_changes_1, get_default_slot_context_1);
+  				}
+  			}
+  		},
+  		i(local) {
+  			if (current) return;
+  			internal.transition_in(default_slot, local);
+  			current = true;
+  		},
+  		o(local) {
+  			internal.transition_out(default_slot, local);
+  			current = false;
+  		},
+  		d(detaching) {
+  			if (default_slot) default_slot.d(detaching);
+  		}
+  	};
+  }
+
+  // (39:33)      
+  function fallback_block_1(ctx) {
+  	let input;
+  	let current;
+
+  	const input_spread_levels = [
+  		{ component: /*component*/ ctx[1] },
+  		{ field: /*field*/ ctx[2] },
+  		/*$$restProps*/ ctx[5]
+  	];
+
+  	let input_props = {
+  		$$slots: { default: [create_default_slot] },
+  		$$scope: { ctx }
+  	};
+
+  	for (let i = 0; i < input_spread_levels.length; i += 1) {
+  		input_props = internal.assign(input_props, input_spread_levels[i]);
+  	}
+
+  	input = new Input({ props: input_props });
+  	input.$on("input", /*input_handler_1*/ ctx[11]);
+
+  	return {
+  		c() {
+  			internal.create_component(input.$$.fragment);
+  		},
+  		m(target, anchor) {
+  			internal.mount_component(input, target, anchor);
+  			current = true;
+  		},
+  		p(ctx, dirty) {
+  			const input_changes = (dirty & /*component, field, $$restProps*/ 38)
+  			? internal.get_spread_update(input_spread_levels, [
+  					dirty & /*component*/ 2 && { component: /*component*/ ctx[1] },
+  					dirty & /*field*/ 4 && { field: /*field*/ ctx[2] },
+  					dirty & /*$$restProps*/ 32 && internal.get_spread_object(/*$$restProps*/ ctx[5])
+  				])
+  			: {};
+
+  			if (dirty & /*$$scope, field*/ 4100) {
+  				input_changes.$$scope = { dirty, ctx };
+  			}
+
+  			input.$set(input_changes);
+  		},
+  		i(local) {
+  			if (current) return;
+  			internal.transition_in(input.$$.fragment, local);
+  			current = true;
+  		},
+  		o(local) {
+  			internal.transition_out(input.$$.fragment, local);
+  			current = false;
+  		},
+  		d(detaching) {
+  			internal.destroy_component(input, detaching);
+  		}
+  	};
+  }
+
+  // (27:16)      
+  function fallback_block(ctx) {
+  	let input;
+  	let current;
+
+  	const input_spread_levels = [
+  		{ component: /*component*/ ctx[1] },
+  		{ field: /*field*/ ctx[2] },
+  		/*$$restProps*/ ctx[5]
+  	];
+
+  	let input_props = {};
+
+  	for (let i = 0; i < input_spread_levels.length; i += 1) {
+  		input_props = internal.assign(input_props, input_spread_levels[i]);
+  	}
+
+  	input = new Input({ props: input_props });
+  	input.$on("input", /*input_handler*/ ctx[10]);
+
+  	return {
+  		c() {
+  			internal.create_component(input.$$.fragment);
+  		},
+  		m(target, anchor) {
+  			internal.mount_component(input, target, anchor);
+  			current = true;
+  		},
+  		p(ctx, dirty) {
+  			const input_changes = (dirty & /*component, field, $$restProps*/ 38)
+  			? internal.get_spread_update(input_spread_levels, [
+  					dirty & /*component*/ 2 && { component: /*component*/ ctx[1] },
+  					dirty & /*field*/ 4 && { field: /*field*/ ctx[2] },
+  					dirty & /*$$restProps*/ 32 && internal.get_spread_object(/*$$restProps*/ ctx[5])
+  				])
+  			: {};
+
+  			input.$set(input_changes);
+  		},
+  		i(local) {
+  			if (current) return;
+  			internal.transition_in(input.$$.fragment, local);
+  			current = true;
+  		},
+  		o(local) {
+  			internal.transition_out(input.$$.fragment, local);
+  			current = false;
+  		},
+  		d(detaching) {
+  			internal.destroy_component(input, detaching);
+  		}
+  	};
+  }
+
+  function create_fragment$1(ctx) {
+  	let current_block_type_index;
+  	let if_block;
+  	let if_block_anchor;
+  	let current;
+  	const if_block_creators = [create_if_block, create_if_block_1, create_else_block];
+  	const if_blocks = [];
+
+  	function select_block_type(ctx, dirty) {
+  		if (/*component*/ ctx[1] === "input" || /*component*/ ctx[1] === "textarea") return 0;
+  		if (/*component*/ ctx[1] === "select") return 1;
+  		return 2;
+  	}
+
+  	current_block_type_index = select_block_type(ctx);
+  	if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
+
+  	return {
+  		c() {
+  			if_block.c();
+  			if_block_anchor = internal.empty();
+  		},
+  		m(target, anchor) {
+  			if_blocks[current_block_type_index].m(target, anchor);
+  			internal.insert(target, if_block_anchor, anchor);
+  			current = true;
+  		},
+  		p(ctx, [dirty]) {
+  			let previous_block_index = current_block_type_index;
+  			current_block_type_index = select_block_type(ctx);
+
+  			if (current_block_type_index === previous_block_index) {
+  				if_blocks[current_block_type_index].p(ctx, dirty);
+  			} else {
+  				internal.group_outros();
+
+  				internal.transition_out(if_blocks[previous_block_index], 1, 1, () => {
+  					if_blocks[previous_block_index] = null;
+  				});
+
+  				internal.check_outros();
+  				if_block = if_blocks[current_block_type_index];
+
+  				if (!if_block) {
+  					if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
+  					if_block.c();
+  				}
+
+  				internal.transition_in(if_block, 1);
+  				if_block.m(if_block_anchor.parentNode, if_block_anchor);
+  			}
+  		},
+  		i(local) {
+  			if (current) return;
+  			internal.transition_in(if_block);
+  			current = true;
+  		},
+  		o(local) {
+  			internal.transition_out(if_block);
+  			current = false;
+  		},
+  		d(detaching) {
+  			if_blocks[current_block_type_index].d(detaching);
+  			if (detaching) internal.detach(if_block_anchor);
+  		}
+  	};
+  }
+
   function instance$1($$self, $$props, $$invalidate) {
-  	const omit_props_names = ["name","subscription","validate"];
+  	const omit_props_names = ["name","subscription","validate","component","value"];
   	let $$restProps = internal.compute_rest_props($$props, omit_props_names);
-  	let $field;
+  	let $fieldStore;
   	let { $$slots: slots = {}, $$scope } = $$props;
+  	const forwardEvent = useForwardEvent();
   	let { name } = $$props;
   	let { subscription = undefined } = $$props;
   	let { validate = undefined } = $$props;
-  	const field = useField(name, { subscription, validate, ...$$restProps });
-  	internal.component_subscribe($$self, field, value => $$invalidate(8, $field = value));
-  	let input, meta;
+  	let { component = "input" } = $$props;
+  	let { value = undefined } = $$props;
+  	const fieldStore = useField(name, { subscription, validate, ...$$restProps });
+  	internal.component_subscribe($$self, fieldStore, value => $$invalidate(13, $fieldStore = value));
+
+  	const input_handler = e => {
+  		forwardEvent(e);
+  		$$invalidate(0, value = e.detail.target.value);
+  	};
+
+  	const input_handler_1 = e => {
+  		forwardEvent(e);
+  		$$invalidate(0, value = e.detail.target.value);
+  	};
 
   	$$self.$$set = $$new_props => {
   		$$props = internal.assign(internal.assign({}, $$props), internal.exclude_internal_props($$new_props));
-  		$$invalidate(9, $$restProps = internal.compute_rest_props($$props, omit_props_names));
-  		if ("name" in $$new_props) $$invalidate(3, name = $$new_props.name);
-  		if ("subscription" in $$new_props) $$invalidate(4, subscription = $$new_props.subscription);
-  		if ("validate" in $$new_props) $$invalidate(5, validate = $$new_props.validate);
-  		if ("$$scope" in $$new_props) $$invalidate(6, $$scope = $$new_props.$$scope);
+  		$$invalidate(5, $$restProps = internal.compute_rest_props($$props, omit_props_names));
+  		if ("name" in $$new_props) $$invalidate(6, name = $$new_props.name);
+  		if ("subscription" in $$new_props) $$invalidate(7, subscription = $$new_props.subscription);
+  		if ("validate" in $$new_props) $$invalidate(8, validate = $$new_props.validate);
+  		if ("component" in $$new_props) $$invalidate(1, component = $$new_props.component);
+  		if ("value" in $$new_props) $$invalidate(0, value = $$new_props.value);
+  		if ("$$scope" in $$new_props) $$invalidate(12, $$scope = $$new_props.$$scope);
   	};
 
+  	let field;
+
   	$$self.$$.update = () => {
-  		if ($$self.$$.dirty & /*$field*/ 256) {
-  			 $$invalidate(0, { input, meta } = $field, input, ($$invalidate(1, meta), $$invalidate(8, $field)));
+  		if ($$self.$$.dirty & /*$fieldStore*/ 8192) {
+  			 $$invalidate(2, field = $fieldStore);
   		}
   	};
 
-  	return [input, meta, field, name, subscription, validate, $$scope, slots];
+  	return [
+  		value,
+  		component,
+  		field,
+  		forwardEvent,
+  		fieldStore,
+  		$$restProps,
+  		name,
+  		subscription,
+  		validate,
+  		slots,
+  		input_handler,
+  		input_handler_1,
+  		$$scope
+  	];
   }
 
   class Field extends internal.SvelteComponent {
   	constructor(options) {
   		super();
-  		internal.init(this, options, instance$1, create_fragment$1, internal.safe_not_equal, { name: 3, subscription: 4, validate: 5 });
+
+  		internal.init(this, options, instance$1, create_fragment$1, internal.safe_not_equal, {
+  			name: 6,
+  			subscription: 7,
+  			validate: 8,
+  			component: 1,
+  			value: 0
+  		});
   	}
   }
+
+  /* src/Input.svelte generated by Svelte v3.29.0 */
+  const get_default_slot_changes$2 = dirty => ({ field: dirty & /*field*/ 4 });
+  const get_default_slot_context$2 = ctx => ({ field: /*field*/ ctx[2] });
+
+  // (48:33) 
+  function create_if_block_2(ctx) {
+  	let select;
+  	let current;
+  	let mounted;
+  	let dispose;
+  	const default_slot_template = /*#slots*/ ctx[9].default;
+  	const default_slot = internal.create_slot(default_slot_template, ctx, /*$$scope*/ ctx[8], get_default_slot_context$2);
+  	let select_levels = [/*input*/ ctx[4], { id: /*id*/ ctx[0] }, /*$$restProps*/ ctx[7]];
+  	let select_data = {};
+
+  	for (let i = 0; i < select_levels.length; i += 1) {
+  		select_data = internal.assign(select_data, select_levels[i]);
+  	}
+
+  	return {
+  		c() {
+  			select = internal.element("select");
+  			if (default_slot) default_slot.c();
+  			internal.set_attributes(select, select_data);
+  		},
+  		m(target, anchor) {
+  			internal.insert(target, select, anchor);
+
+  			if (default_slot) {
+  				default_slot.m(select, null);
+  			}
+
+  			if (select_data.multiple) internal.select_options(select, select_data.value);
+  			/*select_binding*/ ctx[17](select);
+  			current = true;
+
+  			if (!mounted) {
+  				dispose = [
+  					internal.listen(select, "blur", function () {
+  						if (internal.is_function(/*handlers*/ ctx[5].onBlur)) /*handlers*/ ctx[5].onBlur.apply(this, arguments);
+  					}),
+  					internal.listen(select, "focus", function () {
+  						if (internal.is_function(/*handlers*/ ctx[5].onFocus)) /*handlers*/ ctx[5].onFocus.apply(this, arguments);
+  					}),
+  					internal.listen(select, "input", /*input_handler_2*/ ctx[18]),
+  					internal.listen(select, "change", /*change_handler_2*/ ctx[12])
+  				];
+
+  				mounted = true;
+  			}
+  		},
+  		p(new_ctx, dirty) {
+  			ctx = new_ctx;
+
+  			if (default_slot) {
+  				if (default_slot.p && dirty & /*$$scope, field*/ 260) {
+  					internal.update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[8], dirty, get_default_slot_changes$2, get_default_slot_context$2);
+  				}
+  			}
+
+  			internal.set_attributes(select, select_data = internal.get_spread_update(select_levels, [
+  				dirty & /*input*/ 16 && /*input*/ ctx[4],
+  				(!current || dirty & /*id*/ 1) && { id: /*id*/ ctx[0] },
+  				dirty & /*$$restProps*/ 128 && /*$$restProps*/ ctx[7]
+  			]));
+
+  			if (dirty & /*input, id, $$restProps*/ 145 && select_data.multiple) internal.select_options(select, select_data.value);
+  		},
+  		i(local) {
+  			if (current) return;
+  			internal.transition_in(default_slot, local);
+  			current = true;
+  		},
+  		o(local) {
+  			internal.transition_out(default_slot, local);
+  			current = false;
+  		},
+  		d(detaching) {
+  			if (detaching) internal.detach(select);
+  			if (default_slot) default_slot.d(detaching);
+  			/*select_binding*/ ctx[17](null);
+  			mounted = false;
+  			internal.run_all(dispose);
+  		}
+  	};
+  }
+
+  // (34:35) 
+  function create_if_block_1$1(ctx) {
+  	let textarea;
+  	let mounted;
+  	let dispose;
+  	let textarea_levels = [/*input*/ ctx[4], { id: /*id*/ ctx[0] }, /*$$restProps*/ ctx[7]];
+  	let textarea_data = {};
+
+  	for (let i = 0; i < textarea_levels.length; i += 1) {
+  		textarea_data = internal.assign(textarea_data, textarea_levels[i]);
+  	}
+
+  	return {
+  		c() {
+  			textarea = internal.element("textarea");
+  			internal.set_attributes(textarea, textarea_data);
+  		},
+  		m(target, anchor) {
+  			internal.insert(target, textarea, anchor);
+  			/*textarea_binding*/ ctx[15](textarea);
+
+  			if (!mounted) {
+  				dispose = [
+  					internal.listen(textarea, "blur", function () {
+  						if (internal.is_function(/*handlers*/ ctx[5].onBlur)) /*handlers*/ ctx[5].onBlur.apply(this, arguments);
+  					}),
+  					internal.listen(textarea, "focus", function () {
+  						if (internal.is_function(/*handlers*/ ctx[5].onFocus)) /*handlers*/ ctx[5].onFocus.apply(this, arguments);
+  					}),
+  					internal.listen(textarea, "input", /*input_handler_1*/ ctx[16]),
+  					internal.listen(textarea, "change", /*change_handler_1*/ ctx[11])
+  				];
+
+  				mounted = true;
+  			}
+  		},
+  		p(new_ctx, dirty) {
+  			ctx = new_ctx;
+
+  			internal.set_attributes(textarea, textarea_data = internal.get_spread_update(textarea_levels, [
+  				dirty & /*input*/ 16 && /*input*/ ctx[4],
+  				dirty & /*id*/ 1 && { id: /*id*/ ctx[0] },
+  				dirty & /*$$restProps*/ 128 && /*$$restProps*/ ctx[7]
+  			]));
+  		},
+  		i: internal.noop,
+  		o: internal.noop,
+  		d(detaching) {
+  			if (detaching) internal.detach(textarea);
+  			/*textarea_binding*/ ctx[15](null);
+  			mounted = false;
+  			internal.run_all(dispose);
+  		}
+  	};
+  }
+
+  // (20:0) {#if component === 'input'}
+  function create_if_block$1(ctx) {
+  	let input_1;
+  	let mounted;
+  	let dispose;
+  	let input_1_levels = [/*input*/ ctx[4], { id: /*id*/ ctx[0] }, /*$$restProps*/ ctx[7]];
+  	let input_1_data = {};
+
+  	for (let i = 0; i < input_1_levels.length; i += 1) {
+  		input_1_data = internal.assign(input_1_data, input_1_levels[i]);
+  	}
+
+  	return {
+  		c() {
+  			input_1 = internal.element("input");
+  			internal.set_attributes(input_1, input_1_data);
+  		},
+  		m(target, anchor) {
+  			internal.insert(target, input_1, anchor);
+  			/*input_1_binding*/ ctx[13](input_1);
+
+  			if (!mounted) {
+  				dispose = [
+  					internal.listen(input_1, "blur", function () {
+  						if (internal.is_function(/*handlers*/ ctx[5].onBlur)) /*handlers*/ ctx[5].onBlur.apply(this, arguments);
+  					}),
+  					internal.listen(input_1, "focus", function () {
+  						if (internal.is_function(/*handlers*/ ctx[5].onFocus)) /*handlers*/ ctx[5].onFocus.apply(this, arguments);
+  					}),
+  					internal.listen(input_1, "input", /*input_handler*/ ctx[14]),
+  					internal.listen(input_1, "change", /*change_handler*/ ctx[10])
+  				];
+
+  				mounted = true;
+  			}
+  		},
+  		p(new_ctx, dirty) {
+  			ctx = new_ctx;
+
+  			internal.set_attributes(input_1, input_1_data = internal.get_spread_update(input_1_levels, [
+  				dirty & /*input*/ 16 && /*input*/ ctx[4],
+  				dirty & /*id*/ 1 && { id: /*id*/ ctx[0] },
+  				dirty & /*$$restProps*/ 128 && /*$$restProps*/ ctx[7]
+  			]));
+  		},
+  		i: internal.noop,
+  		o: internal.noop,
+  		d(detaching) {
+  			if (detaching) internal.detach(input_1);
+  			/*input_1_binding*/ ctx[13](null);
+  			mounted = false;
+  			internal.run_all(dispose);
+  		}
+  	};
+  }
+
+  function create_fragment$2(ctx) {
+  	let current_block_type_index;
+  	let if_block;
+  	let if_block_anchor;
+  	let current;
+  	const if_block_creators = [create_if_block$1, create_if_block_1$1, create_if_block_2];
+  	const if_blocks = [];
+
+  	function select_block_type(ctx, dirty) {
+  		if (/*component*/ ctx[3] === "input") return 0;
+  		if (/*component*/ ctx[3] === "textarea") return 1;
+  		if (/*component*/ ctx[3] === "select") return 2;
+  		return -1;
+  	}
+
+  	if (~(current_block_type_index = select_block_type(ctx))) {
+  		if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
+  	}
+
+  	return {
+  		c() {
+  			if (if_block) if_block.c();
+  			if_block_anchor = internal.empty();
+  		},
+  		m(target, anchor) {
+  			if (~current_block_type_index) {
+  				if_blocks[current_block_type_index].m(target, anchor);
+  			}
+
+  			internal.insert(target, if_block_anchor, anchor);
+  			current = true;
+  		},
+  		p(ctx, [dirty]) {
+  			let previous_block_index = current_block_type_index;
+  			current_block_type_index = select_block_type(ctx);
+
+  			if (current_block_type_index === previous_block_index) {
+  				if (~current_block_type_index) {
+  					if_blocks[current_block_type_index].p(ctx, dirty);
+  				}
+  			} else {
+  				if (if_block) {
+  					internal.group_outros();
+
+  					internal.transition_out(if_blocks[previous_block_index], 1, 1, () => {
+  						if_blocks[previous_block_index] = null;
+  					});
+
+  					internal.check_outros();
+  				}
+
+  				if (~current_block_type_index) {
+  					if_block = if_blocks[current_block_type_index];
+
+  					if (!if_block) {
+  						if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
+  						if_block.c();
+  					}
+
+  					internal.transition_in(if_block, 1);
+  					if_block.m(if_block_anchor.parentNode, if_block_anchor);
+  				} else {
+  					if_block = null;
+  				}
+  			}
+  		},
+  		i(local) {
+  			if (current) return;
+  			internal.transition_in(if_block);
+  			current = true;
+  		},
+  		o(local) {
+  			internal.transition_out(if_block);
+  			current = false;
+  		},
+  		d(detaching) {
+  			if (~current_block_type_index) {
+  				if_blocks[current_block_type_index].d(detaching);
+  			}
+
+  			if (detaching) internal.detach(if_block_anchor);
+  		}
+  	};
+  }
+
+  function instance$2($$self, $$props, $$invalidate) {
+  	const omit_props_names = ["field","component","id","element"];
+  	let $$restProps = internal.compute_rest_props($$props, omit_props_names);
+  	let { $$slots: slots = {}, $$scope } = $$props;
+  	const forwardEvent = useForwardEvent();
+  	let { field } = $$props;
+  	let { component = "input" } = $$props;
+  	let { id = undefined } = $$props;
+  	let { element = undefined } = $$props;
+  	let input, meta, handlers;
+
+  	function change_handler(event) {
+  		internal.bubble($$self, event);
+  	}
+
+  	function change_handler_1(event) {
+  		internal.bubble($$self, event);
+  	}
+
+  	function change_handler_2(event) {
+  		internal.bubble($$self, event);
+  	}
+
+  	function input_1_binding($$value) {
+  		internal.binding_callbacks[$$value ? "unshift" : "push"](() => {
+  			element = $$value;
+  			$$invalidate(1, element);
+  		});
+  	}
+
+  	const input_handler = e => {
+  		forwardEvent(e);
+  		handlers.onChange(e);
+  	};
+
+  	function textarea_binding($$value) {
+  		internal.binding_callbacks[$$value ? "unshift" : "push"](() => {
+  			element = $$value;
+  			$$invalidate(1, element);
+  		});
+  	}
+
+  	const input_handler_1 = e => {
+  		forwardEvent(e);
+  		handlers.onChange(e);
+  	};
+
+  	function select_binding($$value) {
+  		internal.binding_callbacks[$$value ? "unshift" : "push"](() => {
+  			element = $$value;
+  			$$invalidate(1, element);
+  		});
+  	}
+
+  	const input_handler_2 = e => {
+  		forwardEvent(e);
+  		handlers.onChange(e);
+  	};
+
+  	$$self.$$set = $$new_props => {
+  		$$props = internal.assign(internal.assign({}, $$props), internal.exclude_internal_props($$new_props));
+  		$$invalidate(7, $$restProps = internal.compute_rest_props($$props, omit_props_names));
+  		if ("field" in $$new_props) $$invalidate(2, field = $$new_props.field);
+  		if ("component" in $$new_props) $$invalidate(3, component = $$new_props.component);
+  		if ("id" in $$new_props) $$invalidate(0, id = $$new_props.id);
+  		if ("element" in $$new_props) $$invalidate(1, element = $$new_props.element);
+  		if ("$$scope" in $$new_props) $$invalidate(8, $$scope = $$new_props.$$scope);
+  	};
+
+  	$$self.$$.update = () => {
+  		if ($$self.$$.dirty & /*field*/ 4) {
+  			 $$invalidate(4, { input, meta, handlers } = field, input, ($$invalidate(5, handlers), $$invalidate(2, field)));
+  		}
+
+  		if ($$self.$$.dirty & /*id, input*/ 17) {
+  			 $$invalidate(0, id = id || input.name);
+  		}
+  	};
+
+  	return [
+  		id,
+  		element,
+  		field,
+  		component,
+  		input,
+  		handlers,
+  		forwardEvent,
+  		$$restProps,
+  		$$scope,
+  		slots,
+  		change_handler,
+  		change_handler_1,
+  		change_handler_2,
+  		input_1_binding,
+  		input_handler,
+  		textarea_binding,
+  		input_handler_1,
+  		select_binding,
+  		input_handler_2
+  	];
+  }
+
+  class Input extends internal.SvelteComponent {
+  	constructor(options) {
+  		super();
+
+  		internal.init(this, options, instance$2, create_fragment$2, internal.safe_not_equal, {
+  			field: 2,
+  			component: 3,
+  			id: 0,
+  			element: 1
+  		});
+  	}
+  }
+
+  // Note: This can only forward a CustomEvent, unfortunately, not an event with the original type (InputEvent), so the consumer of this must unwrap the event from event.detail
+  const useForwardEvent = () => {
+    const dispatch = svelte.createEventDispatcher();
+
+    const forwardEvent = (event, { type } = { type: event.type }) => {
+      // console.log('forwarding', event)
+      dispatch(type, event);
+    };
+    return forwardEvent
+  };
 
   const defaultIsEqual = (aArray, bArray) =>
     aArray === bArray ||
@@ -527,24 +1390,29 @@
   // - react-final-form-arrays/src/useFieldArray.js
   // - react-final-form-arrays/src/FieldArray.js
 
-  const all$1 = finalForm.fieldSubscriptionItems.reduce((result, key) => {
+  const all$2 = finalForm.fieldSubscriptionItems.reduce((result, key) => {
     result[key] = true;
     return result
   }, {});
 
+  /**
+   * @param {*} name 
+   * @param {*} config 
+   * @returns a store whose value contains {fields, meta}; It also provides separate derived fields, meta stores if you want to destructure directly as {fields, meta} = useFieldArray
+   */
   const useFieldArray = (
     name,
     config = {},
   ) => {
     const {
-      subscription = all$1,
+      subscription = all$2,
       defaultValue,
       initialValue,
       isEqual = defaultIsEqual,
       validate: validateProp
     } = config;
 
-    const form = useForm$1();
+    const form = getForm();
 
     const formMutators = form.mutators;
     const hasMutators = !!(formMutators && formMutators.push && formMutators.pop);
@@ -588,7 +1456,7 @@
       }
     );
 
-    const fieldsStore = derived(
+    const store = derived(
       field,
       $field => {
         const {
@@ -643,32 +1511,36 @@
           names: () => map((name, _i) => name),
         };
 
-        console.log(`FieldArray fieldState for ${name}:`, fields.names());
+        // console.log(`FieldArray fieldState for ${name}:`, fields.names())
         return {
           fields,
           meta,
         }
       }
     );
-    return fieldsStore
+
+    store.fields = derived(store, $store => $store.fields);
+    store.meta = derived(store, $store => $store.meta);
+    // TODO: Return [fields, meta] to be consistent with useForm ?
+    return store
   };
 
   /* src/arrays/FieldArray.svelte generated by Svelte v3.29.0 */
 
-  const get_default_slot_changes$2 = dirty => ({
+  const get_default_slot_changes$3 = dirty => ({
   	fields: dirty & /*fields*/ 1,
   	meta: dirty & /*meta*/ 2
   });
 
-  const get_default_slot_context$2 = ctx => ({
+  const get_default_slot_context$3 = ctx => ({
   	fields: /*fields*/ ctx[0],
   	meta: /*meta*/ ctx[1]
   });
 
-  function create_fragment$2(ctx) {
+  function create_fragment$3(ctx) {
   	let current;
   	const default_slot_template = /*#slots*/ ctx[10].default;
-  	const default_slot = internal.create_slot(default_slot_template, ctx, /*$$scope*/ ctx[9], get_default_slot_context$2);
+  	const default_slot = internal.create_slot(default_slot_template, ctx, /*$$scope*/ ctx[9], get_default_slot_context$3);
 
   	return {
   		c() {
@@ -684,7 +1556,7 @@
   		p(ctx, [dirty]) {
   			if (default_slot) {
   				if (default_slot.p && dirty & /*$$scope, fields, meta*/ 515) {
-  					internal.update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[9], dirty, get_default_slot_changes$2, get_default_slot_context$2);
+  					internal.update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[9], dirty, get_default_slot_changes$3, get_default_slot_context$3);
   				}
   			}
   		},
@@ -703,17 +1575,17 @@
   	};
   }
 
-  function instance$2($$self, $$props, $$invalidate) {
+  function instance$3($$self, $$props, $$invalidate) {
   	const omit_props_names = ["name","subscription","defaultValue","initialValue","isEqual","validate"];
   	let $$restProps = internal.compute_rest_props($$props, omit_props_names);
   	let $fieldsStore;
   	let { $$slots: slots = {}, $$scope } = $$props;
   	let { name } = $$props;
   	let { subscription = undefined } = $$props;
-  	let { defaultValue } = $$props;
-  	let { initialValue } = $$props;
+  	let { defaultValue = undefined } = $$props;
+  	let { initialValue = undefined } = $$props;
   	let { isEqual = undefined } = $$props;
-  	let { validate } = $$props;
+  	let { validate = undefined } = $$props;
 
   	const fieldsStore = useFieldArray(name, {
   		subscription,
@@ -764,7 +1636,7 @@
   	constructor(options) {
   		super();
 
-  		internal.init(this, options, instance$2, create_fragment$2, internal.safe_not_equal, {
+  		internal.init(this, options, instance$3, create_fragment$3, internal.safe_not_equal, {
   			name: 3,
   			subscription: 4,
   			defaultValue: 5,
@@ -778,14 +1650,17 @@
   exports.Field = Field;
   exports.FieldArray = FieldArray;
   exports.Form = Form;
-  exports.allSubscription = allSubscription;
+  exports.Input = Input;
   exports.contextKey = key;
-  exports.createForm = useForm;
-  exports.createFormContext = createFormContext;
-  exports.getFormContext = getFormContext;
+  exports.fieldAllSubscription = all$1;
+  exports.formAllSubscription = all;
+  exports.getForm = getForm;
+  exports.getValue = getValue;
+  exports.setForm = setForm;
   exports.useField = useField;
   exports.useFieldArray = useFieldArray;
-  exports.useForm = useForm$1;
+  exports.useForm = useForm;
+  exports.useForwardEvent = useForwardEvent;
 
   Object.defineProperty(exports, '__esModule', { value: true });
 
