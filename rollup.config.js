@@ -4,6 +4,7 @@ import pkg from "./package.json";
 
 export default [
   {
+    external: ['svelte/internal', 'svelte', 'final-form'],
     input: "src/index.js",
     output: [
       { file: pkg.module, format: "es" },
