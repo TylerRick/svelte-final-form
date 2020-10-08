@@ -16,7 +16,7 @@
 
   const form = getContext(FORM);
 
-  if (process.env.NODE_ENV !== "production" && !form) {
+  if (!form) {
     throw new Error(
       "Could not find svelte-final-form context value. Please ensure that your Field is inside the Form component.",
     );
