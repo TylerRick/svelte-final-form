@@ -6,7 +6,9 @@ import { getFormContext } from './context'
 const useForm = () => {
   const form = getFormContext()
 
-  if (process.env.NODE_ENV !== "production" && !form) {
+  // process is not defined in browser environment
+  // process.env.NODE_ENV !== "production" &&
+  if (!form) {
     throw new Error(
       "Could not find svelte-final-form context value. Please ensure that your Field is inside the Form component.",
     )
