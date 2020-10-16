@@ -40,7 +40,7 @@
 
 import { createForm, formSubscriptionItems } from "final-form"
 import { readable } from "svelte/store"
-import { setForm } from '.'
+import { setForm } from './context'
 
 export const all = formSubscriptionItems.reduce((result, key) => {
   result[key] = true

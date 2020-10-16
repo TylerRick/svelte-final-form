@@ -1,6 +1,8 @@
 <script>
   // console.log('Field')
-  import { useField, Input, useForwardEvent } from '.'
+  import { default as Input } from './Input.svelte'
+  import { default as useField } from './useField'
+  import { useForwardEvent } from './useForwardEvent.js'
   const forwardEvent = useForwardEvent()
 
   export let name

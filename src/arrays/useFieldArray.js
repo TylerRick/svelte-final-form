@@ -1,5 +1,6 @@
 /* eslint-disable no-shadow */
-import { getForm, useField } from '..'
+import { getForm } from '../context'
+import { default as useField } from '../useField'
 import { fieldSubscriptionItems, ARRAY_ERROR } from 'final-form'
 import defaultIsEqual from './defaultIsEqual'
 import { derived } from 'svelte/store';

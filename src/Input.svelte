@@ -3,7 +3,7 @@
    * This is a wrapper for <input> or <select> that uses `field` to get the props and event handlers for its <input>.
    */
 
-  import { useForwardEvent } from '.'
+  import { useForwardEvent } from './useForwardEvent.js'
   const forwardEvent = useForwardEvent()
 
   export let field
