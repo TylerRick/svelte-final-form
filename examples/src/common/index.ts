@@ -1,6 +1,6 @@
 export { default as ExampleHeader } from './ExampleHeader.svelte'
 export { default as InputGroup } from './InputGroup.svelte'
-export { default as ErrorMessages } from './ErrorMessages.svelte'
+export { default as FieldErrors } from './FieldErrors.svelte'
 export { default as FormStateDebugInfo } from './FormStateDebugInfo.svelte'
 export { default as Spinner } from './Spinner.svelte'
 export * from './filterProps'

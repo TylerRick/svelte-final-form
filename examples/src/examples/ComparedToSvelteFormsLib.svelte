@@ -5,7 +5,7 @@
   import Select from "svelte-select";
   // Your custom form group adapter
   import InputGroup from 'svelte_common/form/svelte-final-form/InputGroup.svelte'
-  import ErrorMessagesIndependent from 'svelte_common/form/svelte-final-form/ErrorMessagesIndependent.svelte'
+  import FieldErrorsIndependent from 'svelte_common/form/svelte-final-form/FieldErrorsIndependent.svelte'
   import FieldSpy from 'svelte_common/form/svelte-final-form/FieldSpy.svelte'
 
   const selectItems = ["Green", "Red", "Black"];
@@ -56,7 +56,7 @@
         {/if}
       </Field>
       <!-- <FieldSpy name="firstName" /> -->
-      <ErrorMessagesIndependent name="firstName" />
+      <FieldErrorsIndependent name="firstName" />
     </div>
 
     <!-- You can prepare your Form Group Adapter with Label, Input, Errors -->

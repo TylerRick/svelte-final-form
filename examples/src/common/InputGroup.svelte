@@ -2,19 +2,19 @@
   /**
    * This is a wrapper for Input that also adds:
    * - a <label> (optional)
-   * - <ErrorMessages>
+   * - <FieldErrors>
    * Pass this to Field's slot (or pass component={InputGroup} if you want all of this instead of just an Input.
    * 
    * This is a more advanced variation of examples/src/examples/FocusFirstError/InputRow.svelte that adds:
    * - <label for={input.id}>
-   * - <ErrorMessages> which also takes into account submitError
+   * - <FieldErrors> which also takes into account submitError
    * - forward/bubble events emitted by Input
    * - export let value to allow parent to bind to it
    */
 
   import { Input, useForwardEvent } from 'svelte-final-form'
   const forwardEvent = useForwardEvent()
-  import { ErrorMessages } from '.'
+  import { FieldErrors } from '.'
 
   export let field: any
   export let label: string = undefined
@@ -42,4 +42,4 @@
 </slot>
 
 <!-- <pre>{JSON.stringify(meta, null, 2)}</pre> -->
-<ErrorMessages {field} />
+<FieldErrors {field} />
