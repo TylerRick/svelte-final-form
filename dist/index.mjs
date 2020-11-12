@@ -172,9 +172,9 @@ function whenValueChanges(init, callback, isEqual = (a, b) => a === b) {
  * @param {config} param0 
  */
 const useFormState = ({
-  onChange,
+  onChange = undefined,
   subscription = all,
-}) => {
+} = {}) => {
   const form = getForm();
   const state = readable({}, set => {
     let unsubscribe;

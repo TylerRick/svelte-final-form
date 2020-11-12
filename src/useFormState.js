@@ -14,9 +14,9 @@ import whenValueChanges from "./whenValueChanges"
  * @param {config} param0 
  */
 const useFormState = ({
-  onChange,
+  onChange = undefined,
   subscription = formAllSubscription,
-}) => {
+} = {}) => {
   const form = getForm()
   const state = readable({}, set => {
     let unsubscribe
