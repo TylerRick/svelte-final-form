@@ -57,6 +57,13 @@ const useField = (
     ...restProps  // Passed through to field.input
   } = config
 
+  if (!name) {
+    throw new Error('useField: name cannot be undefined')
+  }
+  if (type === 'radio' && _value === undefined) {
+    throw new Error('useField: for type="radio", value cannot be undefined')
+  }
+
   const form = getForm()
 
   let store = readable({}, set => {
@@ -85,7 +92,6 @@ const useField = (
         ...restProps,
         name,
         id,
-        // value: format(value),
         get value() {
           let formattedValue = value
           if (formatOnBlur) {

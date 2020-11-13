@@ -1,5 +1,4 @@
 <script>
-  // console.log('Field')
   import { useField, Input, useForwardEvent } from '.'
   const forwardEvent = useForwardEvent()
 
@@ -10,9 +9,10 @@
 
   // Read-only/const. (That is, updating this from parent will have no effect.)
   // Note: This is not available if you override the slot fallback, because the on:input arrives at the consumer's slot contents but doesn't get forwarded to *this* component. You would have to bind to the value of the input passed into the slot instead.
-  export let value = undefined
+  // export let internalValue = undefined
   export let element = undefined
 
+  // console.log('Field', name, $$restProps)
   const fieldStore = useField(name, {
     subscription,
     validate,
@@ -29,8 +29,9 @@
       {field}
       {...$$restProps}
       on:input={(e) => {
+        // console.log('forwarding', e)
         forwardEvent(e)
-        value = e.detail.target.value
+        // internalValue = e.detail.target.value
       }}
       bind:element
     />
@@ -43,7 +44,7 @@
       {...$$restProps}
       on:input={(e) => {
         forwardEvent(e)
-        value = e.detail.target.value
+        // internalValue = e.detail.target.value
       }}
       bind:element
     >

@@ -3,6 +3,9 @@ export { default as ComponentPropVsChildren, exampleMeta as ComponentPropVsChild
 
 export { default as Simple, exampleMeta as Simple_meta } from './Simple'
 export { default as Simple_FunctionalLabels, exampleMeta as Simple_FunctionalLabels_meta } from './Simple_FunctionalLabels'
+
+export { default as Radio, exampleMeta as Radio_meta } from './Radio'
+
 export { default as FieldLevelValidation } from './FieldLevelValidation.svelte'
 // export { default as FieldLevelValidation_Conditional } from './FieldLevelValidation_Conditional.svelte'
 export { default as FieldLevelValidation_ConditionalOnOtherField, exampleMeta as FieldLevelValidation_ConditionalOnOtherField_meta } from './FieldLevelValidation_ConditionalOnOtherField'

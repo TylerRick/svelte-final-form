@@ -32,6 +32,8 @@ useFormState() is used internally inside \`<FormSpy/>\`.
 
 2. Pass an onChange callback
 <FormSpy/> can sometimes be useful to execute code when a particular part of form state changes. This is what the onChange callback is for.
+
+The field equivalent (that subscribes to the state of the field) to \`FormSpy\` is just \`Field\`. (There is no need for a separate "\`FieldSpy\`" component.)
   `)}
 
   <Form
@@ -54,6 +56,11 @@ useFormState() is used internally inside \`<FormSpy/>\`.
             {field}
             placeholder="First Name"
           />
+        </Field>
+      </div>
+      <div>
+        <Field name="firstName" let:field >
+          Field for {field.input.name}: value: {JSON.stringify(field.input.value, null, 2)}
         </Field>
       </div>
 
