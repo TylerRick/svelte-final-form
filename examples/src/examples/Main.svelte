@@ -61,9 +61,9 @@ Submit the form, then check the console to see what values were submitted.
       <input
         name={input.name}
         value={input.value}
-        on:blur={handlers.onBlur}
-        on:focus={handlers.onFocus}
-        on:input={(e) => handlers.onChange(e.target.value)}
+        on:blur={handlers.blur}
+        on:focus={handlers.focus}
+        on:input={(e) => handlers.change(e.target.value)}
         type="text"
         placeholder="First Name"
       />
@@ -82,9 +82,9 @@ Submit the form, then check the console to see what values were submitted.
       <Select
         items={selectItems}
         selectedValue={input.value}
-        on:blur={handlers.onBlur}
-        on:focus={handlers.onFocus}
-        on:select={({ detail }) => handlers.onChange(detail.value)}
+        on:blur={handlers.blur}
+        on:focus={handlers.focus}
+        on:select={({ detail }) => handlers.change(detail.value)}
       />
     </Field>
 

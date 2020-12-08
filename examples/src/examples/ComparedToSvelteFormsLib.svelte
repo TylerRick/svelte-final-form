@@ -44,15 +44,15 @@
       <Field name="firstName" let:field>
         <label for="firstName">First Name</label>
         <input
-          name={input.name}
-          on:blur={input.onBlur}
-          on:focus={input.onFocus}
-          on:input={(e) => { console.log('on:input', e.target.value); input.onChange(e.target.value) } }
+          name={field.input.name}
+          on:blur={field.handlers.blur}
+          on:focus={field.handlers.focus}
+          on:input={field.handlers.change}
           type="text"
           placeholder="First Name"
-          value={input.value} />
-        {#if false && meta.touched && meta.error}
-          <div>{meta.error}</div>
+          value={field.input.value} />
+        {#if false && field.meta.touched && field.meta.error}
+          <div>{field.meta.error}</div>
         {/if}
       </Field>
       <!-- <FieldSpy name="firstName" /> -->
@@ -63,8 +63,7 @@
     <Field name="lastName" let:field>
       <div>
         <InputGroup
-          {input}
-          {meta}
+          {field}
           label="Last Name"
           type="text"
           placeholder="Last Name"
@@ -78,8 +77,8 @@
         <!-- on:focus={input.onFocus} -->
       <Select
         items={selectItems}
-        on:select={({ detail }) => input.onChange(detail.value)}
-        selectedValue={input.value}
+        on:select={({ detail }) => field.handlers.change(detail.value)}
+        selectedValue={field.input.value}
         name="color"
         />
     </Field>

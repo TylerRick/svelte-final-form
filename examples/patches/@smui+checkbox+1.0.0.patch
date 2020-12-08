@@ -1,0 +1,12 @@
+diff --git a/node_modules/@smui/checkbox/Checkbox.svelte b/node_modules/@smui/checkbox/Checkbox.svelte
+index d065c16..c9631c0 100644
+--- a/node_modules/@smui/checkbox/Checkbox.svelte
++++ b/node_modules/@smui/checkbox/Checkbox.svelte
+@@ -22,6 +22,7 @@
+     on:change={handleChange}
+     on:input={handleChange}
+     on:change on:input
++    on:focus on:blur
+     {...exclude(prefixFilter($$props, 'input$'), ['use', 'class'])}
+   />
+   <div class="mdc-checkbox__background">

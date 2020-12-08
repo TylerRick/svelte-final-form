@@ -45,7 +45,7 @@ const useField = (
     subscription = all,
     type,
     // validateFields,
-    value: _value,  // Static value used for 'checkbox' and 'radio'
+    value: staticValue,  // Static value used for 'checkbox' and 'radio'
 
     validate,
 
@@ -60,7 +60,7 @@ const useField = (
   if (!name) {
     throw new Error('useField: name cannot be undefined')
   }
-  if (type === 'radio' && _value === undefined) {
+  if (type === 'radio' && staticValue === undefined) {
     throw new Error('useField: for type="radio", value cannot be undefined')
   }
 
@@ -105,7 +105,7 @@ const useField = (
             formattedValue = ''
           }
           if (type === 'checkbox' || type === 'radio') {
-            return _value
+            return staticValue
           } else if (component === 'select' && multiple) {
             return formattedValue || []
           }
@@ -113,13 +113,13 @@ const useField = (
         },
         get checked() {
           if (type === 'checkbox') {
-            if (_value === undefined) {
+            if (staticValue === undefined) {
               return !!state.value
             } else {
-              return !!(Array.isArray(state.value) && ~state.value.indexOf(_value))
+              return !!(Array.isArray(state.value) && ~state.value.indexOf(staticValue))
             }
           } else if (type === 'radio') {
-            return state.value === _value
+            return state.value === staticValue
           }
           return undefined
         },
@@ -132,17 +132,18 @@ const useField = (
       }
 
       const handlers = {
-        onBlur: blur,
-        onChange: (event) => {
+        blur,
+        focus,
+        change: (event) => {
           // eslint-disable-next-line no-shadow
           const value = event && event.target
-            ? getValue(event, state.value, _value)
+            ? getValue(event, state.value, staticValue)
             : event
           change(parse(value, name))
         },
-        onFocus: focus,
       }
       set({
+        config,
         input,
         handlers,
         meta,
@@ -172,6 +173,7 @@ const useField = (
 
 
   store = Object.assign(store, {
+    config: derived(store, $store => $store.config),
     input: derived(store, $store => $store.input),
     handlers: derived(store, $store => $store.handlers),
     meta: derived(store, $store => $store.meta),

@@ -10,7 +10,7 @@ export { default as Form } from './Form.svelte'
 export { default as FormSpy } from './FormSpy.svelte'
 export { default as Field } from './Field.svelte'
 export { default as Input } from './Input.svelte'
-export { default as useForwardEvent } from './useForwardEvent'
+export { default as useHandlers } from './useHandlers'
 
 export * from './arrays'
 

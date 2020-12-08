@@ -72,9 +72,9 @@ By default, Svelte Final Form subscribes to all changes, but if you want to fine
       <label for="firstName">First Name</label>
       <input
         {...input}
-        on:blur={handlers.onBlur}
-        on:focus={handlers.onFocus}
-        on:input={handlers.onChange}
+        on:blur={handlers.blur}
+        on:focus={handlers.focus}
+        on:input={handlers.change}
         type="text"
         placeholder="First Name"
       />
@@ -93,9 +93,9 @@ By default, Svelte Final Form subscribes to all changes, but if you want to fine
       <Select
         items={selectItems}
         selectedValue={input.value}
-        on:blur={handlers.onBlur}
-        on:focus={handlers.onFocus}
-        on:select={({ detail }) => handlers.onChange(detail.value)}
+        on:blur={handlers.blur}
+        on:focus={handlers.focus}
+        on:select={({ detail }) => handlers.change(detail.value)}
       />
     </Field>
 
@@ -177,9 +177,9 @@ There are 2 main ways to tell `<Field>` what to render:
           <input
             {...input}
             type="text"
-            on:blur={handlers.onBlur}
-            on:focus={handlers.onFocus}
-            on:input={handlers.onChange}
+            on:blur={handlers.blur}
+            on:focus={handlers.focus}
+            on:input={handlers.change}
             placeholder="First Name"
           />
         </Field>
@@ -193,9 +193,9 @@ There are 2 main ways to tell `<Field>` what to render:
         >
           <input
             {...input}
-            on:blur={handlers.onBlur}
-            on:focus={handlers.onFocus}
-            on:input={handlers.onChange}
+            on:blur={handlers.blur}
+            on:focus={handlers.focus}
+            on:input={handlers.change}
             placeholder="First Name"
           />
         </Field>

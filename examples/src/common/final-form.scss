@@ -60,12 +60,12 @@
     color: #222;
   }
 
+  /*
+  // Removed. This should have a more specific selector.
   & > div {
     text-align: center;
   }
 
-  /*
-  // Removed. This should have a more specific selector.
   a {
     display: block;
     text-align: center;
@@ -91,11 +91,15 @@
   }
   */
 
+  & > form,
+  & > div.form {
+    margin: 10px auto;
+  }
   form,
   div.form {
     text-align: left;
     max-width: 500px;
-    margin: 10px auto;
+    margin: 10px;
     border: 1px solid #ccc;
     padding: 20px;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
@@ -189,4 +193,14 @@
       padding: 20px;
     }
   }
+}
+
+
+// Added
+.form-container-row {
+  display: flex;
+  flex-flow: row nowrap
+}
+
+:not(.form-container-row) .form-container-row {
 }

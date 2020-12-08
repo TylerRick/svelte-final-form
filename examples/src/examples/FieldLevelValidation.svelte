@@ -1,9 +1,29 @@
+<script context="module">
+  import marked from 'marked'
+  import { ExampleHeader, FormStateDebugInfo } from '../common'
+  export const exampleMeta = {
+    title: 'Field-level validation',
+    description: marked(`
+A simple example with field-level validation.
+`),
+    compareTo: [
+      {'react-final-form': {
+        demoPage: 'https://final-form.org/docs/react-final-form/examples/field-level-validation',
+        sourceURL: 'https://github.com/final-form/react-final-form/tree/master/examples/field-level-validation',
+        directAdaptation: true,
+      }}
+    ],
+    tags: [
+      'field-level validation',
+      'synchronous',
+    ],
+  }
+</script>
+
 <script>
-  import { onDestroy, onMount } from "svelte";
   import { Form, Field } from "svelte-final-form"
   import { required, composeValidators } from '../common'
   import InputGroup from '../common/InputGroup.svelte'
-  import FormStateDebugInfo from '../common/FormStateDebugInfo.svelte'
 
   const onSubmit = async (values) => {
     console.log('submitted:', JSON.stringify(values, undefined, 2))
@@ -11,8 +31,7 @@
 </script>
 
 <article class="final-form-example">
-  <p>A simple example with field-level validation.</p>
-  <p>Compare to: https://final-form.org/docs/react-final-form/examples/field-level-validation</p>
+  <ExampleHeader {exampleMeta} />
 
   <Form
     {onSubmit}
@@ -50,7 +69,6 @@
       </div>
     </form>
 
-    <pre>state.values: {JSON.stringify(state.values, null, 2)}</pre>
-    <pre>state: {JSON.stringify(state, null, 2)}</pre>
+    <FormStateDebugInfo {state} />
   </Form>
 </article>

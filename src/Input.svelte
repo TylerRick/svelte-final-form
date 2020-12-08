@@ -3,9 +3,6 @@
    * This is a wrapper for <input>/<textarea>/<select> that uses `field` to get the props and event handlers to use for its <input>/etc. element.
    */
 
-  import { useForwardEvent } from '.'
-  const forwardEvent = useForwardEvent()
-
   export let field
   export let component = 'input'
 
@@ -20,12 +17,10 @@
   <input
     bind:this={element}
     {...input}
-    on:blur={handlers.onBlur}
-    on:focus={handlers.onFocus}
-    on:input={(e) => {
-      forwardEvent(e)
-      handlers.onChange(e)
-    } }
+    on:blur={handlers.blur}
+    on:focus={handlers.focus}
+    on:input={handlers.change}
+    on:input
     on:change
     {...$$restProps}
   />
@@ -33,12 +28,10 @@
   <textarea
     bind:this={element}
     {...input}
-    on:blur={handlers.onBlur}
-    on:focus={handlers.onFocus}
-    on:input={(e) => {
-      forwardEvent(e)
-      handlers.onChange(e)
-    } }
+    on:blur={handlers.blur}
+    on:focus={handlers.focus}
+    on:input={handlers.change}
+    on:input
     on:change
     {...$$restProps}
   />
@@ -47,12 +40,10 @@
     bind:this={element}
     {...$$restProps}
     {...input}
-    on:blur={handlers.onBlur}
-    on:focus={handlers.onFocus}
-    on:input={(e) => {
-      forwardEvent(e)
-      handlers.onChange(e)
-    } }
+    on:blur={handlers.blur}
+    on:focus={handlers.focus}
+    on:input={handlers.change}
+    on:input
     on:change
   >
     <slot {field} />

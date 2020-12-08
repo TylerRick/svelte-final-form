@@ -1,6 +1,5 @@
 <script>
-  import { useField, Input, useForwardEvent } from '.'
-  const forwardEvent = useForwardEvent()
+  import { useField, Input } from '.'
 
   export let name
   export let subscription = undefined
@@ -28,11 +27,7 @@
       {component}
       {field}
       {...$$restProps}
-      on:input={(e) => {
-        // console.log('forwarding', e)
-        forwardEvent(e)
-        // internalValue = e.detail.target.value
-      }}
+      on:input on:change on:focus on:blur
       bind:element
     />
   </slot>
@@ -42,10 +37,7 @@
       {component}
       {field}
       {...$$restProps}
-      on:input={(e) => {
-        forwardEvent(e)
-        // internalValue = e.detail.target.value
-      }}
+      on:input on:change on:focus on:blur
       bind:element
     >
       <slot {field} />

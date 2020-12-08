@@ -2,6 +2,10 @@
   font-family: sans-serif;
   /*
   // Removed. This should have a more specific selector.
+  & > div {
+    text-align: center;
+  }
+
   a {
     display: block;
     text-align: center;
@@ -31,13 +35,13 @@
   .final-form-example h2 {
     text-align: center;
     color: #222; }
-  .final-form-example > div {
-    text-align: center; }
+  .final-form-example > form, .final-form-example > div.form {
+    margin: 10px auto; }
   .final-form-example form,
   .final-form-example div.form {
     text-align: left;
     max-width: 500px;
-    margin: 10px auto;
+    margin: 10px;
     border: 1px solid #ccc;
     padding: 20px;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
@@ -170,5 +174,9 @@
       background: rgba(0, 0, 0, 0.1);
       box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.2);
       padding: 20px; }
+
+.form-container-row {
+  display: flex;
+  flex-flow: row nowrap; }
 
 /*# sourceMappingURL=final-form.css.map */

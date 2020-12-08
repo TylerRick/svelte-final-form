@@ -10,6 +10,7 @@ How to use radio fields.
     ],
     tags: [
       'radio',
+      'WIP',
     ],
   }
 </script>
@@ -37,138 +38,146 @@ How to use radio fields.
     let:form
     let:state
   >
-    <!-- svelte-ignore a11y-label-has-associated-control -->
-    <form on:submit|preventDefault={form.submit}>
-      <div>
-        <label>Basic</label>
+    <div class="form-container-row">
+      <!-- svelte-ignore a11y-label-has-associated-control -->
+      <form on:submit|preventDefault={form.submit}>
         <div>
-          <label>
-            <Field
-              name="stooge"
-              component="input"
-              type="radio"
-              value="larry"
-            />{' '}
-            Larry
-          </label>
-          <label>
-            <Field
-              name="stooge"
-              component="input"
-              type="radio"
-              value="moe"
-            />{' '}
-            Moe
-          </label>
-          <label>
-            <Field
-              name="stooge"
-              component="input"
-              type="radio"
-              value="curly"
-            />{' '}
-            Curly
-          </label>
+          <label>Basic</label>
+          <div>
+            <label>
+              <Field
+                name="stooge"
+                component="input"
+                type="radio"
+                value="larry"
+              />{' '}
+              Larry
+            </label>
+            <label>
+              <Field
+                name="stooge"
+                component="input"
+                type="radio"
+                value="moe"
+              />{' '}
+              Moe
+            </label>
+            <label>
+              <Field
+                name="stooge"
+                component="input"
+                type="radio"
+                value="curly"
+              />{' '}
+              Curly
+            </label>
+          </div>
         </div>
-      </div>
 
-      {@html marked(`
+        {@html marked(`
+---
 - If you need to get/show meta about the field group (all of the concrete fields that share the same name), then you can wrap it in a new Field _without_ any \`component\`, \`type\`, or value \`value\` props.
 - You can put the \`validate\` on any of the fields for the same name.
-      `)}
-      <div>
-        <label>Validation</label>
+        `)}
         <div>
-          <label>
-            <Field
-              name="color"
-              component="input"
-              type="radio"
-              value="Blue"
-            />{' '}
-            Blue
-          </label>
-          <label>
-            <Field
-              name="color"
-              component="input"
-              type="radio"
-              value="Green"
-            />{' '}
-            Green
-          </label>
-          <label>
-            <Field
-              name="color"
-              component="input"
-              type="radio"
-              value="Purple"
-            />{' '}
-            Purple
-          </label>
-          <Field name="color"
-            validate={(value) => (value == 'Blue') ? "Blue is not the correct answer." : undefined}
-            let:field
-          >
-            <FieldErrors {field} />
-          </Field>
+          <label>Validation</label>
+          <div>
+            <label>
+              <Field
+                name="color"
+                component="input"
+                type="radio"
+                value="Blue"
+              />{' '}
+              Blue
+            </label>
+            <label>
+              <Field
+                name="color"
+                component="input"
+                type="radio"
+                value="Green"
+              />{' '}
+              Green
+            </label>
+            <label>
+              <Field
+                name="color"
+                component="input"
+                type="radio"
+                value="Purple"
+              />{' '}
+              Purple
+            </label>
+            <Field name="color"
+              validate={(value) => (value == 'Blue') ? "Blue is not the correct answer." : undefined}
+              let:field
+            >
+              <FieldErrors {field} />
+            </Field>
+          </div>
         </div>
-      </div>
 
-      {@html marked(`
-What if you want it to "blur" the field as soon as you select an option? (For example, so that it immediately shows any errors, since the error showing may depend on field.meta.touched.) You can do that with on:input. Or just change your error-showing logic to show this error unconditionally (without checking for touched)
-      `)}
-      <div>
-        <label>Validation</label>
+        {@html marked(`
+---
+What if you want it to "blur" the field as soon as you select an option? (For example, so that it immediately shows any errors, since the error showing may depend on field.meta.touched.)
+You can do that with on:input.
+Or just change your error-showing logic to show this error unconditionally (without checking for touched)
+
+TODO: get it to trigger blur on:input
+        `)}
         <div>
-          <label>
-            <Field
-              name="color2"
-              component="input"
-              type="radio"
-              value="Blue"
-              on:input={({detail}) => {
-                console.log(detail)
-                // TODO: fix bubbling event; event.target is null
-                // TODO: form.blur(field.input.name)
-              }}
-            />{' '}
-            Blue
-          </label>
-          <label>
-            <Field
-              name="color2"
-              component="input"
-              type="radio"
-              value="Green"
-              on:input={({detail}) => {
-                console.log(detail)
-              }}
-            />{' '}
-            Green
-          </label>
-          <label>
-            <Field
-              name="color2"
-              component="input"
-              type="radio"
-              value="Purple"
-              on:input={({detail}) => {
-                console.log(detail)
-              }}
-            />{' '}
-            Purple
-          </label>
-          <Field name="color2"
-            validate={(value) => `${value} is not the correct answer.`}
-            let:field
-          >
-            <FieldErrors {field} />
-          </Field>
+          <label>Validation</label>
+          <div>
+            <label>
+              <Field
+                name="color2"
+                component="input"
+                type="radio"
+                value="Blue"
+                on:input={({detail}) => {
+                  console.log(detail)
+                  // TODO: fix bubbling event; event.target is null
+                  // TODO: form.blur(field.input.name)
+                }}
+              />{' '}
+              Blue
+            </label>
+            <label>
+              <Field
+                name="color2"
+                component="input"
+                type="radio"
+                value="Green"
+                on:input={({detail}) => {
+                  console.log(detail)
+                }}
+              />{' '}
+              Green
+            </label>
+            <label>
+              <Field
+                name="color2"
+                component="input"
+                type="radio"
+                value="Purple"
+                on:input={({detail}) => {
+                  console.log(detail)
+                }}
+              />{' '}
+              Purple
+            </label>
+            <Field name="color2"
+              validate={(value) => `${value} is not the correct answer.`}
+              let:field
+            >
+              <FieldErrors {field} />
+            </Field>
+          </div>
         </div>
-      </div>
-    </form>
+      </form>
 
-    <FormStateDebugInfo {state} />
+      <FormStateDebugInfo {state} />
+    </div>
   </Form>
 </article>

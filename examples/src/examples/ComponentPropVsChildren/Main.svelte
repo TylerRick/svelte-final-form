@@ -135,9 +135,9 @@ There are a few different ways you can tell a \`<Field>\` what to render. This i
   <label for={input.id}>First Name</label>
   <input
     {...input}
-    on:blur={handlers.onBlur}
-    on:focus={handlers.onFocus}
-    on:input={handlers.onChange}
+    on:blur={handlers.blur}
+    on:focus={handlers.focus}
+    on:input={handlers.change}
     placeholder="First Name"
   />
 </Field>
@@ -152,9 +152,9 @@ There are a few different ways you can tell a \`<Field>\` what to render. This i
           <label for={input.id}>First Name</label>
           <input
             {...input}
-            on:blur={handlers.onBlur}
-            on:focus={handlers.onFocus}
-            on:input={handlers.onChange}
+            on:blur={handlers.blur}
+            on:focus={handlers.focus}
+            on:input={handlers.change}
             placeholder="First Name"
           />
         </Field>

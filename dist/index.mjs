@@ -1,6 +1,6 @@
-import { setContext, getContext, createEventDispatcher } from 'svelte';
+import { setContext, getContext } from 'svelte';
 import { formSubscriptionItems, createForm as createForm$1, fieldSubscriptionItems, ARRAY_ERROR } from 'final-form';
-import { SvelteComponent, init, safe_not_equal as safe_not_equal$1, create_slot, update_slot, transition_in, transition_out, compute_rest_props, component_subscribe, assign, exclude_internal_props, empty, insert, group_outros, check_outros, detach, create_component, mount_component, get_spread_update, get_spread_object, destroy_component, add_flush_callback, binding_callbacks, bind, bubble, element, set_attributes, select_options, listen, is_function as is_function$1, run_all as run_all$1, noop as noop$1 } from 'svelte/internal';
+import { SvelteComponent, init, safe_not_equal as safe_not_equal$1, create_slot, update_slot, transition_in, transition_out, compute_rest_props, component_subscribe, assign, exclude_internal_props, empty, insert, group_outros, check_outros, detach, bubble, create_component, mount_component, get_spread_update, get_spread_object, destroy_component, add_flush_callback, binding_callbacks, bind, element, set_attributes, select_options, listen, is_function as is_function$1, run_all as run_all$1, noop as noop$1 } from 'svelte/internal';
 
 const key = {};
 
@@ -348,7 +348,7 @@ const useField = (
     subscription = all$1,
     type,
     // validateFields,
-    value: _value,  // Static value used for 'checkbox' and 'radio'
+    value: staticValue,  // Static value used for 'checkbox' and 'radio'
 
     validate,
 
@@ -363,7 +363,7 @@ const useField = (
   if (!name) {
     throw new Error('useField: name cannot be undefined')
   }
-  if (type === 'radio' && _value === undefined) {
+  if (type === 'radio' && staticValue === undefined) {
     throw new Error('useField: for type="radio", value cannot be undefined')
   }
 
@@ -408,7 +408,7 @@ const useField = (
             formattedValue = '';
           }
           if (type === 'checkbox' || type === 'radio') {
-            return _value
+            return staticValue
           } else if (component === 'select' && multiple) {
             return formattedValue || []
           }
@@ -416,13 +416,13 @@ const useField = (
         },
         get checked() {
           if (type === 'checkbox') {
-            if (_value === undefined) {
+            if (staticValue === undefined) {
               return !!state.value
             } else {
-              return !!(Array.isArray(state.value) && ~state.value.indexOf(_value))
+              return !!(Array.isArray(state.value) && ~state.value.indexOf(staticValue))
             }
           } else if (type === 'radio') {
-            return state.value === _value
+            return state.value === staticValue
           }
           return undefined
         },
@@ -435,17 +435,18 @@ const useField = (
       }
 
       const handlers = {
-        onBlur: blur,
-        onChange: (event) => {
+        blur,
+        focus,
+        change: (event) => {
           // eslint-disable-next-line no-shadow
           const value = event && event.target
-            ? getValue(event, state.value, _value)
+            ? getValue(event, state.value, staticValue)
             : event;
           change(parse(value, name));
         },
-        onFocus: focus,
       };
       set({
+        config,
         input,
         handlers,
         meta,
@@ -475,6 +476,7 @@ const useField = (
 
 
   store = Object.assign(store, {
+    config: derived(store, $store => $store.config),
     input: derived(store, $store => $store.input),
     handlers: derived(store, $store => $store.handlers),
     meta: derived(store, $store => $store.meta),
@@ -748,11 +750,11 @@ const get_component_slot_context = ctx => ({ field: /*field*/ ctx[2] });
 const get_default_slot_changes$2 = dirty => ({ field: dirty & /*field*/ 4 });
 const get_default_slot_context$2 = ctx => ({ field: /*field*/ ctx[2] });
 
-// (56:0) {:else}
+// (48:0) {:else}
 function create_else_block(ctx) {
 	let current;
-	const default_slot_template = /*#slots*/ ctx[9].default;
-	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[14], get_default_slot_context_2);
+	const default_slot_template = /*#slots*/ ctx[8].default;
+	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[19], get_default_slot_context_2);
 
 	return {
 		c() {
@@ -767,8 +769,8 @@ function create_else_block(ctx) {
 		},
 		p(ctx, dirty) {
 			if (default_slot) {
-				if (default_slot.p && dirty & /*$$scope, field*/ 16388) {
-					update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[14], dirty, get_default_slot_changes_2, get_default_slot_context_2);
+				if (default_slot.p && dirty & /*$$scope, field*/ 524292) {
+					update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[19], dirty, get_default_slot_changes_2, get_default_slot_context_2);
 				}
 			}
 		},
@@ -787,12 +789,12 @@ function create_else_block(ctx) {
 	};
 }
 
-// (54:20) 
+// (46:20) 
 function create_if_block_2(ctx) {
 	let switch_instance;
 	let switch_instance_anchor;
 	let current;
-	const switch_instance_spread_levels = [{ field: /*field*/ ctx[2] }, /*$$restProps*/ ctx[5]];
+	const switch_instance_spread_levels = [{ field: /*field*/ ctx[2] }, /*$$restProps*/ ctx[4]];
 	var switch_value = /*component*/ ctx[1];
 
 	function switch_props(ctx) {
@@ -823,10 +825,10 @@ function create_if_block_2(ctx) {
 			current = true;
 		},
 		p(ctx, dirty) {
-			const switch_instance_changes = (dirty & /*field, $$restProps*/ 36)
+			const switch_instance_changes = (dirty & /*field, $$restProps*/ 20)
 			? get_spread_update(switch_instance_spread_levels, [
 					dirty & /*field*/ 4 && { field: /*field*/ ctx[2] },
-					dirty & /*$$restProps*/ 32 && get_spread_object(/*$$restProps*/ ctx[5])
+					dirty & /*$$restProps*/ 16 && get_spread_object(/*$$restProps*/ ctx[4])
 				])
 			: {};
 
@@ -870,11 +872,11 @@ function create_if_block_2(ctx) {
 	};
 }
 
-// (39:33) 
+// (34:33) 
 function create_if_block_1(ctx) {
 	let current;
-	const component_slot_template = /*#slots*/ ctx[9].component;
-	const component_slot = create_slot(component_slot_template, ctx, /*$$scope*/ ctx[14], get_component_slot_context);
+	const component_slot_template = /*#slots*/ ctx[8].component;
+	const component_slot = create_slot(component_slot_template, ctx, /*$$scope*/ ctx[19], get_component_slot_context);
 	const component_slot_or_fallback = component_slot || fallback_block_1(ctx);
 
 	return {
@@ -890,11 +892,11 @@ function create_if_block_1(ctx) {
 		},
 		p(ctx, dirty) {
 			if (component_slot) {
-				if (component_slot.p && dirty & /*$$scope, field*/ 16388) {
-					update_slot(component_slot, component_slot_template, ctx, /*$$scope*/ ctx[14], dirty, get_component_slot_changes, get_component_slot_context);
+				if (component_slot.p && dirty & /*$$scope, field*/ 524292) {
+					update_slot(component_slot, component_slot_template, ctx, /*$$scope*/ ctx[19], dirty, get_component_slot_changes, get_component_slot_context);
 				}
 			} else {
-				if (component_slot_or_fallback && component_slot_or_fallback.p && dirty & /*component, field, $$restProps, element, $$scope*/ 16423) {
+				if (component_slot_or_fallback && component_slot_or_fallback.p && dirty & /*component, field, $$restProps, element, $$scope*/ 524311) {
 					component_slot_or_fallback.p(ctx, dirty);
 				}
 			}
@@ -914,11 +916,11 @@ function create_if_block_1(ctx) {
 	};
 }
 
-// (25:0) {#if component === 'input' || component === 'textarea'}
+// (24:0) {#if component === 'input' || component === 'textarea'}
 function create_if_block(ctx) {
 	let current;
-	const default_slot_template = /*#slots*/ ctx[9].default;
-	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[14], get_default_slot_context$2);
+	const default_slot_template = /*#slots*/ ctx[8].default;
+	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[19], get_default_slot_context$2);
 	const default_slot_or_fallback = default_slot || fallback_block(ctx);
 
 	return {
@@ -934,11 +936,11 @@ function create_if_block(ctx) {
 		},
 		p(ctx, dirty) {
 			if (default_slot) {
-				if (default_slot.p && dirty & /*$$scope, field*/ 16388) {
-					update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[14], dirty, get_default_slot_changes$2, get_default_slot_context$2);
+				if (default_slot.p && dirty & /*$$scope, field*/ 524292) {
+					update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[19], dirty, get_default_slot_changes$2, get_default_slot_context$2);
 				}
 			} else {
-				if (default_slot_or_fallback && default_slot_or_fallback.p && dirty & /*component, field, $$restProps, element*/ 39) {
+				if (default_slot_or_fallback && default_slot_or_fallback.p && dirty & /*component, field, $$restProps, element*/ 23) {
 					default_slot_or_fallback.p(ctx, dirty);
 				}
 			}
@@ -958,11 +960,11 @@ function create_if_block(ctx) {
 	};
 }
 
-// (41:4) <Input       {component}       {field}       {...$$restProps}       on:input={(e) => {         forwardEvent(e)         // internalValue = e.detail.target.value       }}       bind:element     >
+// (36:4) <Input       {component}       {field}       {...$$restProps}       on:input on:change on:focus on:blur       bind:element     >
 function create_default_slot(ctx) {
 	let current;
-	const default_slot_template = /*#slots*/ ctx[9].default;
-	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[14], get_default_slot_context_1);
+	const default_slot_template = /*#slots*/ ctx[8].default;
+	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[19], get_default_slot_context_1);
 
 	return {
 		c() {
@@ -977,8 +979,8 @@ function create_default_slot(ctx) {
 		},
 		p(ctx, dirty) {
 			if (default_slot) {
-				if (default_slot.p && dirty & /*$$scope, field*/ 16388) {
-					update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[14], dirty, get_default_slot_changes_1, get_default_slot_context_1);
+				if (default_slot.p && dirty & /*$$scope, field*/ 524292) {
+					update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[19], dirty, get_default_slot_changes_1, get_default_slot_context_1);
 				}
 			}
 		},
@@ -997,7 +999,7 @@ function create_default_slot(ctx) {
 	};
 }
 
-// (40:33)      
+// (35:33)      
 function fallback_block_1(ctx) {
 	let input;
 	let updating_element;
@@ -1006,11 +1008,11 @@ function fallback_block_1(ctx) {
 	const input_spread_levels = [
 		{ component: /*component*/ ctx[1] },
 		{ field: /*field*/ ctx[2] },
-		/*$$restProps*/ ctx[5]
+		/*$$restProps*/ ctx[4]
 	];
 
 	function input_element_binding_1(value) {
-		/*input_element_binding_1*/ ctx[12].call(null, value);
+		/*input_element_binding_1*/ ctx[14].call(null, value);
 	}
 
 	let input_props = {
@@ -1028,7 +1030,10 @@ function fallback_block_1(ctx) {
 
 	input = new Input({ props: input_props });
 	binding_callbacks.push(() => bind(input, "element", input_element_binding_1));
-	input.$on("input", /*input_handler_1*/ ctx[13]);
+	input.$on("input", /*input_handler_1*/ ctx[15]);
+	input.$on("change", /*change_handler_1*/ ctx[16]);
+	input.$on("focus", /*focus_handler_1*/ ctx[17]);
+	input.$on("blur", /*blur_handler_1*/ ctx[18]);
 
 	return {
 		c() {
@@ -1039,15 +1044,15 @@ function fallback_block_1(ctx) {
 			current = true;
 		},
 		p(ctx, dirty) {
-			const input_changes = (dirty & /*component, field, $$restProps*/ 38)
+			const input_changes = (dirty & /*component, field, $$restProps*/ 22)
 			? get_spread_update(input_spread_levels, [
 					dirty & /*component*/ 2 && { component: /*component*/ ctx[1] },
 					dirty & /*field*/ 4 && { field: /*field*/ ctx[2] },
-					dirty & /*$$restProps*/ 32 && get_spread_object(/*$$restProps*/ ctx[5])
+					dirty & /*$$restProps*/ 16 && get_spread_object(/*$$restProps*/ ctx[4])
 				])
 			: {};
 
-			if (dirty & /*$$scope, field*/ 16388) {
+			if (dirty & /*$$scope, field*/ 524292) {
 				input_changes.$$scope = { dirty, ctx };
 			}
 
@@ -1074,7 +1079,7 @@ function fallback_block_1(ctx) {
 	};
 }
 
-// (26:16)      
+// (25:16)      
 function fallback_block(ctx) {
 	let input;
 	let updating_element;
@@ -1083,11 +1088,11 @@ function fallback_block(ctx) {
 	const input_spread_levels = [
 		{ component: /*component*/ ctx[1] },
 		{ field: /*field*/ ctx[2] },
-		/*$$restProps*/ ctx[5]
+		/*$$restProps*/ ctx[4]
 	];
 
 	function input_element_binding(value) {
-		/*input_element_binding*/ ctx[10].call(null, value);
+		/*input_element_binding*/ ctx[9].call(null, value);
 	}
 
 	let input_props = {};
@@ -1102,7 +1107,10 @@ function fallback_block(ctx) {
 
 	input = new Input({ props: input_props });
 	binding_callbacks.push(() => bind(input, "element", input_element_binding));
-	input.$on("input", /*input_handler*/ ctx[11]);
+	input.$on("input", /*input_handler*/ ctx[10]);
+	input.$on("change", /*change_handler*/ ctx[11]);
+	input.$on("focus", /*focus_handler*/ ctx[12]);
+	input.$on("blur", /*blur_handler*/ ctx[13]);
 
 	return {
 		c() {
@@ -1113,11 +1121,11 @@ function fallback_block(ctx) {
 			current = true;
 		},
 		p(ctx, dirty) {
-			const input_changes = (dirty & /*component, field, $$restProps*/ 38)
+			const input_changes = (dirty & /*component, field, $$restProps*/ 22)
 			? get_spread_update(input_spread_levels, [
 					dirty & /*component*/ 2 && { component: /*component*/ ctx[1] },
 					dirty & /*field*/ 4 && { field: /*field*/ ctx[2] },
-					dirty & /*$$restProps*/ 32 && get_spread_object(/*$$restProps*/ ctx[5])
+					dirty & /*$$restProps*/ 16 && get_spread_object(/*$$restProps*/ ctx[4])
 				])
 			: {};
 
@@ -1218,7 +1226,6 @@ function instance$2($$self, $$props, $$invalidate) {
 	let $$restProps = compute_rest_props($$props, omit_props_names);
 	let $fieldStore;
 	let { $$slots: slots = {}, $$scope } = $$props;
-	const forwardEvent = useForwardEvent();
 	let { name } = $$props;
 	let { subscription = undefined } = $$props;
 	let { validate = undefined } = $$props;
@@ -1233,42 +1240,65 @@ function instance$2($$self, $$props, $$invalidate) {
 		...$$restProps
 	});
 
-	component_subscribe($$self, fieldStore, value => $$invalidate(15, $fieldStore = value));
+	component_subscribe($$self, fieldStore, value => $$invalidate(20, $fieldStore = value));
 
 	function input_element_binding(value) {
 		element = value;
 		$$invalidate(0, element);
 	}
 
-	const input_handler = e => {
-		// console.log('forwarding', e)
-		forwardEvent(e);
-	}; // internalValue = e.detail.target.value
+	function input_handler(event) {
+		bubble($$self, event);
+	}
+
+	function change_handler(event) {
+		bubble($$self, event);
+	}
+
+	function focus_handler(event) {
+		bubble($$self, event);
+	}
+
+	function blur_handler(event) {
+		bubble($$self, event);
+	}
 
 	function input_element_binding_1(value) {
 		element = value;
 		$$invalidate(0, element);
 	}
 
-	const input_handler_1 = e => {
-		forwardEvent(e);
-	}; // internalValue = e.detail.target.value
+	function input_handler_1(event) {
+		bubble($$self, event);
+	}
+
+	function change_handler_1(event) {
+		bubble($$self, event);
+	}
+
+	function focus_handler_1(event) {
+		bubble($$self, event);
+	}
+
+	function blur_handler_1(event) {
+		bubble($$self, event);
+	}
 
 	$$self.$$set = $$new_props => {
 		$$props = assign(assign({}, $$props), exclude_internal_props($$new_props));
-		$$invalidate(5, $$restProps = compute_rest_props($$props, omit_props_names));
-		if ("name" in $$new_props) $$invalidate(6, name = $$new_props.name);
-		if ("subscription" in $$new_props) $$invalidate(7, subscription = $$new_props.subscription);
-		if ("validate" in $$new_props) $$invalidate(8, validate = $$new_props.validate);
+		$$invalidate(4, $$restProps = compute_rest_props($$props, omit_props_names));
+		if ("name" in $$new_props) $$invalidate(5, name = $$new_props.name);
+		if ("subscription" in $$new_props) $$invalidate(6, subscription = $$new_props.subscription);
+		if ("validate" in $$new_props) $$invalidate(7, validate = $$new_props.validate);
 		if ("component" in $$new_props) $$invalidate(1, component = $$new_props.component);
 		if ("element" in $$new_props) $$invalidate(0, element = $$new_props.element);
-		if ("$$scope" in $$new_props) $$invalidate(14, $$scope = $$new_props.$$scope);
+		if ("$$scope" in $$new_props) $$invalidate(19, $$scope = $$new_props.$$scope);
 	};
 
 	let field;
 
 	$$self.$$.update = () => {
-		if ($$self.$$.dirty & /*$fieldStore*/ 32768) {
+		if ($$self.$$.dirty & /*$fieldStore*/ 1048576) {
 			 $$invalidate(2, field = $fieldStore);
 		}
 	};
@@ -1277,7 +1307,6 @@ function instance$2($$self, $$props, $$invalidate) {
 		element,
 		component,
 		field,
-		forwardEvent,
 		fieldStore,
 		$$restProps,
 		name,
@@ -1286,8 +1315,14 @@ function instance$2($$self, $$props, $$invalidate) {
 		slots,
 		input_element_binding,
 		input_handler,
+		change_handler,
+		focus_handler,
+		blur_handler,
 		input_element_binding_1,
 		input_handler_1,
+		change_handler_1,
+		focus_handler_1,
+		blur_handler_1,
 		$$scope
 	];
 }
@@ -1297,9 +1332,9 @@ class Field extends SvelteComponent {
 		super();
 
 		init(this, options, instance$2, create_fragment$2, safe_not_equal$1, {
-			name: 6,
-			subscription: 7,
-			validate: 8,
+			name: 5,
+			subscription: 6,
+			validate: 7,
 			component: 1,
 			element: 0
 		});
@@ -1307,18 +1342,19 @@ class Field extends SvelteComponent {
 }
 
 /* src/Input.svelte generated by Svelte v3.29.0 */
+
 const get_default_slot_changes$3 = dirty => ({ field: dirty & /*field*/ 2 });
 const get_default_slot_context$3 = ctx => ({ field: /*field*/ ctx[1] });
 
-// (45:33) 
+// (38:33) 
 function create_if_block_2$1(ctx) {
 	let select;
 	let current;
 	let mounted;
 	let dispose;
-	const default_slot_template = /*#slots*/ ctx[8].default;
-	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[7], get_default_slot_context$3);
-	let select_levels = [/*$$restProps*/ ctx[6], /*input*/ ctx[3]];
+	const default_slot_template = /*#slots*/ ctx[7].default;
+	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[6], get_default_slot_context$3);
+	let select_levels = [/*$$restProps*/ ctx[5], /*input*/ ctx[3]];
 	let select_data = {};
 
 	for (let i = 0; i < select_levels.length; i += 1) {
@@ -1345,13 +1381,16 @@ function create_if_block_2$1(ctx) {
 			if (!mounted) {
 				dispose = [
 					listen(select, "blur", function () {
-						if (is_function$1(/*handlers*/ ctx[4].onBlur)) /*handlers*/ ctx[4].onBlur.apply(this, arguments);
+						if (is_function$1(/*handlers*/ ctx[4].blur)) /*handlers*/ ctx[4].blur.apply(this, arguments);
 					}),
 					listen(select, "focus", function () {
-						if (is_function$1(/*handlers*/ ctx[4].onFocus)) /*handlers*/ ctx[4].onFocus.apply(this, arguments);
+						if (is_function$1(/*handlers*/ ctx[4].focus)) /*handlers*/ ctx[4].focus.apply(this, arguments);
 					}),
-					listen(select, "input", /*input_handler_2*/ ctx[17]),
-					listen(select, "change", /*change_handler_2*/ ctx[11])
+					listen(select, "input", function () {
+						if (is_function$1(/*handlers*/ ctx[4].change)) /*handlers*/ ctx[4].change.apply(this, arguments);
+					}),
+					listen(select, "input", /*input_handler_2*/ ctx[12]),
+					listen(select, "change", /*change_handler_2*/ ctx[13])
 				];
 
 				mounted = true;
@@ -1361,17 +1400,17 @@ function create_if_block_2$1(ctx) {
 			ctx = new_ctx;
 
 			if (default_slot) {
-				if (default_slot.p && dirty & /*$$scope, field*/ 130) {
-					update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[7], dirty, get_default_slot_changes$3, get_default_slot_context$3);
+				if (default_slot.p && dirty & /*$$scope, field*/ 66) {
+					update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[6], dirty, get_default_slot_changes$3, get_default_slot_context$3);
 				}
 			}
 
 			set_attributes(select, select_data = get_spread_update(select_levels, [
-				dirty & /*$$restProps*/ 64 && /*$$restProps*/ ctx[6],
+				dirty & /*$$restProps*/ 32 && /*$$restProps*/ ctx[5],
 				dirty & /*input*/ 8 && /*input*/ ctx[3]
 			]));
 
-			if (dirty & /*$$restProps, input*/ 72 && select_data.multiple) select_options(select, select_data.value);
+			if (dirty & /*$$restProps, input*/ 40 && select_data.multiple) select_options(select, select_data.value);
 		},
 		i(local) {
 			if (current) return;
@@ -1392,12 +1431,12 @@ function create_if_block_2$1(ctx) {
 	};
 }
 
-// (32:35) 
+// (27:35) 
 function create_if_block_1$1(ctx) {
 	let textarea;
 	let mounted;
 	let dispose;
-	let textarea_levels = [/*input*/ ctx[3], /*$$restProps*/ ctx[6]];
+	let textarea_levels = [/*input*/ ctx[3], /*$$restProps*/ ctx[5]];
 	let textarea_data = {};
 
 	for (let i = 0; i < textarea_levels.length; i += 1) {
@@ -1411,18 +1450,21 @@ function create_if_block_1$1(ctx) {
 		},
 		m(target, anchor) {
 			insert(target, textarea, anchor);
-			/*textarea_binding*/ ctx[14](textarea);
+			/*textarea_binding*/ ctx[15](textarea);
 
 			if (!mounted) {
 				dispose = [
 					listen(textarea, "blur", function () {
-						if (is_function$1(/*handlers*/ ctx[4].onBlur)) /*handlers*/ ctx[4].onBlur.apply(this, arguments);
+						if (is_function$1(/*handlers*/ ctx[4].blur)) /*handlers*/ ctx[4].blur.apply(this, arguments);
 					}),
 					listen(textarea, "focus", function () {
-						if (is_function$1(/*handlers*/ ctx[4].onFocus)) /*handlers*/ ctx[4].onFocus.apply(this, arguments);
+						if (is_function$1(/*handlers*/ ctx[4].focus)) /*handlers*/ ctx[4].focus.apply(this, arguments);
 					}),
-					listen(textarea, "input", /*input_handler_1*/ ctx[15]),
-					listen(textarea, "change", /*change_handler_1*/ ctx[10])
+					listen(textarea, "input", function () {
+						if (is_function$1(/*handlers*/ ctx[4].change)) /*handlers*/ ctx[4].change.apply(this, arguments);
+					}),
+					listen(textarea, "input", /*input_handler_1*/ ctx[10]),
+					listen(textarea, "change", /*change_handler_1*/ ctx[11])
 				];
 
 				mounted = true;
@@ -1433,26 +1475,26 @@ function create_if_block_1$1(ctx) {
 
 			set_attributes(textarea, textarea_data = get_spread_update(textarea_levels, [
 				dirty & /*input*/ 8 && /*input*/ ctx[3],
-				dirty & /*$$restProps*/ 64 && /*$$restProps*/ ctx[6]
+				dirty & /*$$restProps*/ 32 && /*$$restProps*/ ctx[5]
 			]));
 		},
 		i: noop$1,
 		o: noop$1,
 		d(detaching) {
 			if (detaching) detach(textarea);
-			/*textarea_binding*/ ctx[14](null);
+			/*textarea_binding*/ ctx[15](null);
 			mounted = false;
 			run_all$1(dispose);
 		}
 	};
 }
 
-// (19:0) {#if component === 'input'}
+// (16:0) {#if component === 'input'}
 function create_if_block$1(ctx) {
 	let input_1;
 	let mounted;
 	let dispose;
-	let input_1_levels = [/*input*/ ctx[3], /*$$restProps*/ ctx[6]];
+	let input_1_levels = [/*input*/ ctx[3], /*$$restProps*/ ctx[5]];
 	let input_1_data = {};
 
 	for (let i = 0; i < input_1_levels.length; i += 1) {
@@ -1466,17 +1508,20 @@ function create_if_block$1(ctx) {
 		},
 		m(target, anchor) {
 			insert(target, input_1, anchor);
-			/*input_1_binding*/ ctx[12](input_1);
+			/*input_1_binding*/ ctx[14](input_1);
 
 			if (!mounted) {
 				dispose = [
 					listen(input_1, "blur", function () {
-						if (is_function$1(/*handlers*/ ctx[4].onBlur)) /*handlers*/ ctx[4].onBlur.apply(this, arguments);
+						if (is_function$1(/*handlers*/ ctx[4].blur)) /*handlers*/ ctx[4].blur.apply(this, arguments);
 					}),
 					listen(input_1, "focus", function () {
-						if (is_function$1(/*handlers*/ ctx[4].onFocus)) /*handlers*/ ctx[4].onFocus.apply(this, arguments);
+						if (is_function$1(/*handlers*/ ctx[4].focus)) /*handlers*/ ctx[4].focus.apply(this, arguments);
 					}),
-					listen(input_1, "input", /*input_handler*/ ctx[13]),
+					listen(input_1, "input", function () {
+						if (is_function$1(/*handlers*/ ctx[4].change)) /*handlers*/ ctx[4].change.apply(this, arguments);
+					}),
+					listen(input_1, "input", /*input_handler*/ ctx[8]),
 					listen(input_1, "change", /*change_handler*/ ctx[9])
 				];
 
@@ -1488,14 +1533,14 @@ function create_if_block$1(ctx) {
 
 			set_attributes(input_1, input_1_data = get_spread_update(input_1_levels, [
 				dirty & /*input*/ 8 && /*input*/ ctx[3],
-				dirty & /*$$restProps*/ 64 && /*$$restProps*/ ctx[6]
+				dirty & /*$$restProps*/ 32 && /*$$restProps*/ ctx[5]
 			]));
 		},
 		i: noop$1,
 		o: noop$1,
 		d(detaching) {
 			if (detaching) detach(input_1);
-			/*input_1_binding*/ ctx[12](null);
+			/*input_1_binding*/ ctx[14](null);
 			mounted = false;
 			run_all$1(dispose);
 		}
@@ -1591,17 +1636,28 @@ function instance$3($$self, $$props, $$invalidate) {
 	const omit_props_names = ["field","component","element"];
 	let $$restProps = compute_rest_props($$props, omit_props_names);
 	let { $$slots: slots = {}, $$scope } = $$props;
-	const forwardEvent = useForwardEvent();
 	let { field } = $$props;
 	let { component = "input" } = $$props;
 	let { element = undefined } = $$props;
 	let input, meta, handlers;
 
+	function input_handler(event) {
+		bubble($$self, event);
+	}
+
 	function change_handler(event) {
 		bubble($$self, event);
 	}
 
+	function input_handler_1(event) {
+		bubble($$self, event);
+	}
+
 	function change_handler_1(event) {
+		bubble($$self, event);
+	}
+
+	function input_handler_2(event) {
 		bubble($$self, event);
 	}
 
@@ -1616,22 +1672,12 @@ function instance$3($$self, $$props, $$invalidate) {
 		});
 	}
 
-	const input_handler = e => {
-		forwardEvent(e);
-		handlers.onChange(e);
-	};
-
 	function textarea_binding($$value) {
 		binding_callbacks[$$value ? "unshift" : "push"](() => {
 			element = $$value;
 			$$invalidate(0, element);
 		});
 	}
-
-	const input_handler_1 = e => {
-		forwardEvent(e);
-		handlers.onChange(e);
-	};
 
 	function select_binding($$value) {
 		binding_callbacks[$$value ? "unshift" : "push"](() => {
@@ -1640,18 +1686,13 @@ function instance$3($$self, $$props, $$invalidate) {
 		});
 	}
 
-	const input_handler_2 = e => {
-		forwardEvent(e);
-		handlers.onChange(e);
-	};
-
 	$$self.$$set = $$new_props => {
 		$$props = assign(assign({}, $$props), exclude_internal_props($$new_props));
-		$$invalidate(6, $$restProps = compute_rest_props($$props, omit_props_names));
+		$$invalidate(5, $$restProps = compute_rest_props($$props, omit_props_names));
 		if ("field" in $$new_props) $$invalidate(1, field = $$new_props.field);
 		if ("component" in $$new_props) $$invalidate(2, component = $$new_props.component);
 		if ("element" in $$new_props) $$invalidate(0, element = $$new_props.element);
-		if ("$$scope" in $$new_props) $$invalidate(7, $$scope = $$new_props.$$scope);
+		if ("$$scope" in $$new_props) $$invalidate(6, $$scope = $$new_props.$$scope);
 	};
 
 	$$self.$$.update = () => {
@@ -1666,19 +1707,18 @@ function instance$3($$self, $$props, $$invalidate) {
 		component,
 		input,
 		handlers,
-		forwardEvent,
 		$$restProps,
 		$$scope,
 		slots,
+		input_handler,
 		change_handler,
+		input_handler_1,
 		change_handler_1,
+		input_handler_2,
 		change_handler_2,
 		input_1_binding,
-		input_handler,
 		textarea_binding,
-		input_handler_1,
-		select_binding,
-		input_handler_2
+		select_binding
 	];
 }
 
@@ -1689,16 +1729,59 @@ class Input extends SvelteComponent {
 	}
 }
 
-// Note: This can only forward a CustomEvent, unfortunately, not an event with the original type (InputEvent), so the consumer of this must unwrap the event from event.detail
-const useForwardEvent = () => {
-  const dispatch = createEventDispatcher();
+// Based on https://github.com/devongovett/svelte-hooks/blob/master/attrs.js
 
-  const forwardEvent = (event, { type } = { type: event.type }) => {
-    // console.log('forwarding', event)
-    dispatch(type, event);
+// Adds listeners for the given handlers.
+// use:useHandlers
+function useHandlers(element, handlers) {
+  let apply = (newHandlers) => {
+    for (let key in newHandlers) {
+      let event = key;
+      let capture = false;
+      if (key.endsWith('Capture')) {
+        capture = true;
+        event = event.slice(0, -7);
+      }
+
+      if (handlers[key] != null && (newHandlers[key] == null || newHandlers[key] !== handlers[key])) {
+        element.removeEventListener(event, handlers[key], capture);
+      }
+
+      if (newHandlers[key] != null) {
+        element.addEventListener(event, newHandlers[key], capture);
+      }
+    }
   };
-  return forwardEvent
-};
+
+  apply(handlers);
+
+  return {
+    update(newHandlers) {
+      let update = {};
+      for (let key in newHandlers) {
+        if (newHandlers[key] != null && newHandlers[key] !== handlers[key]) {
+          // The handler for a given event name has been changed to a new function.
+          update[key] = newHandlers[key];
+        }
+      }
+
+      for (let key in handlers) {
+        if (handlers[key] != null && !(key in newHandlers)) {
+          // The handler for a given event name has been removed.
+          update[key] = undefined;
+        }
+      }
+
+      apply(update);
+      handlers = newHandlers;
+    },
+    destroy() {
+      for (let event in handlers) {
+        element.removeEventListener(event, handlers[event]);
+      }
+    },
+  }
+}
 
 const defaultIsEqual = (aArray, bArray) =>
   aArray === bArray ||
@@ -1972,4 +2055,4 @@ class FieldArray extends SvelteComponent {
 	}
 }
 
-export { Field, FieldArray, Form, FormSpy, Input, key as contextKey, createForm, all$1 as fieldAllSubscription, all as formAllSubscription, getForm, getValue, setForm, useField, useFieldArray, useFormState, useForwardEvent, whenValueChanges };
+export { Field, FieldArray, Form, FormSpy, Input, key as contextKey, createForm, all$1 as fieldAllSubscription, all as formAllSubscription, getForm, getValue, setForm, useField, useFieldArray, useFormState, useHandlers, whenValueChanges };

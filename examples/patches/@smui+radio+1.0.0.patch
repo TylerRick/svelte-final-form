@@ -1,0 +1,12 @@
+diff --git a/node_modules/@smui/radio/Radio.svelte b/node_modules/@smui/radio/Radio.svelte
+index 08b1953..43310c4 100644
+--- a/node_modules/@smui/radio/Radio.svelte
++++ b/node_modules/@smui/radio/Radio.svelte
+@@ -19,6 +19,7 @@
+     {checked}
+     on:change={handleChange}
+     on:change on:input
++    on:focus on:blur
+     {...exclude(prefixFilter($$props, 'input$'), ['use', 'class'])}
+   />
+   <div class="mdc-radio__background">

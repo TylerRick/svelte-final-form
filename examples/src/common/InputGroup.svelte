@@ -12,8 +12,7 @@
    * - export let value to allow parent to bind to it
    */
 
-  import { Input, useForwardEvent } from 'svelte-final-form'
-  const forwardEvent = useForwardEvent()
+  import { Input } from 'svelte-final-form'
   import { FieldErrors } from '.'
 
   export let field: any
@@ -34,10 +33,8 @@
   <Input
     {field}
     {...$$restProps}
-    on:input={(e) => {
-      forwardEvent(e)
-      value = e.detail.target.value
-    } }
+    on:input={(e) => { value = e.target.value } }
+    on:input
   />
 </slot>
 

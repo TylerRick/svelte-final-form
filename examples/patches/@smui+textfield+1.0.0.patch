@@ -1,0 +1,22 @@
+diff --git a/node_modules/@smui/textfield/Textfield.svelte b/node_modules/@smui/textfield/Textfield.svelte
+index 3db7527..aa24e72 100644
+--- a/node_modules/@smui/textfield/Textfield.svelte
++++ b/node_modules/@smui/textfield/Textfield.svelte
+@@ -29,6 +29,8 @@
+         {updateInvalid}
+         on:change
+         on:input
++        on:focus
++        on:blur
+         {...prefixFilter($$props, 'input$')}
+       />
+     {:else}
+@@ -42,6 +44,8 @@
+         {updateInvalid}
+         on:change
+         on:input
++        on:focus
++        on:blur
+         {...((fullwidth && label) ? {placeholder: label} : {})}
+         {...prefixFilter($$props, 'input$')}
+       />
